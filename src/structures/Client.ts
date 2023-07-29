@@ -1,8 +1,7 @@
 import { LogLevel, SapphireClient } from "@sapphire/framework";
 import { Time } from "@sapphire/time-utilities";
-import { ActivityType, Partials, GatewayIntentBits, EmbedBuilder, CommandInteraction, Message } from "discord.js";
+import { Partials, GatewayIntentBits, ActivityType } from "discord.js";
 import { Config } from "../config";
-import { Color } from "../utils/colors/colors";
 
 export class Client extends SapphireClient {
   public constructor() {
@@ -13,6 +12,9 @@ export class Client extends SapphireClient {
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessageReactions,
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildMessageReactions,
       ],
       defaultCooldown: {
         delay: Time.Second * 5,
@@ -33,57 +35,13 @@ export class Client extends SapphireClient {
       presence: {
         status: "dnd",
         activities: [
-            {
-                name: "/help & /pedido",
-                type: ActivityType.Watching
-            }
+          {
+            name: 'League of Legends',
+            type: ActivityType.Playing
+          }
         ]
       },
     });
-  }
-
-  public InteractionEmbed(interaction: CommandInteraction, data: string) {
-    if (interaction.deferred) {
-      interaction
-        .followUp({
-          embeds: [
-            new EmbedBuilder()
-            .setAuthor({
-              name: interaction.client.user.tag,
-              iconURL: interaction.client.user.displayAvatarURL()
-            })
-              .setColor(Color.Main)
-              .setDescription(`${data.substring(0, 3000)}`),
-          ],
-        })
-        .catch(() => {});
-    } else {
-      interaction
-        .reply({
-          embeds: [
-            new EmbedBuilder()
-              .setColor(Color.Main)
-              .setDescription(`${data.substring(0, 3000)}`)
-              .setAuthor({
-                name: interaction.client.user.tag,
-                iconURL: interaction.client.user.displayAvatarURL()
-              })
-          ],
-        })
-        .catch(() => {});
-    }
-  }
-
-  public MessageEmbed(message: Message, data: string) {
-    message
-      .reply({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(Color.Main)
-            .setDescription(`${data.substring(0, 3000)}`),
-        ],
-      })
-      .catch(() => {});
   }
 
   public override login(token?: string) {
