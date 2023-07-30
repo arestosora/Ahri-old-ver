@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-export async function IDGenerator(length = 10) {
+export async function IDGenerator(length = 5) {
   const charset = "0123456789";
   const idArray = new Uint8Array(length);
   const randomValues = crypto.randomFillSync(idArray);

@@ -10,17 +10,20 @@ datasource db {
 model Users {
   id        Int      @id @default(autoincrement())
   UserID     String   @unique
-  Pedidos     String
+  Pedidos     Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Pedidos {
-  Referencia String @id
+  id Int  @id @default(autoincrement())
+  Referencia String @unique
   UserID String
   Pedido String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  Estado String @default("Pendiente")
+  Comprobante String
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 model Config {

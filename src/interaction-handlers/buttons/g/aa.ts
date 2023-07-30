@@ -3,6 +3,7 @@ import { EmbedBuilder, Emoji, TextChannel } from 'discord.js';
 import { ActionRowBuilder, ButtonInteraction, ButtonBuilder, ButtonStyle } from "discord.js";
 import { Color } from '../../../utils/colors/colors';
 import { Emojis } from '../../../utils/emojis/emojis';
+import { Prisma } from '../../../structures/PrismaClient';
 
 interface optionsObject {
   disabled: boolean | undefined,
@@ -13,7 +14,7 @@ export const build = async (actionRowBuilder: ActionRowBuilder, options: options
   return new Promise(resolve => {
     actionRowBuilder.addComponents(
       new ButtonBuilder()
-        .setCustomId(`general:acceptadmin_u${options.author}_${data?.join(",")}`)
+        .setCustomId(`g:aa_a_${data?.join(",")}`)
         .setLabel("Confirmar Pedido")
         .setDisabled(options?.disabled)
         .setStyle(ButtonStyle.Success)
@@ -32,8 +33,22 @@ export class ButtonHandler extends InteractionHandler {
   public override async parse(interaction: ButtonInteraction) {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-    if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+    if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+      // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+      const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
+      let permited: boolean = restriction.startsWith("a")
+      if (!permited && restriction.startsWith("u")) {
+        permited = (interaction.user.id == restriction.slice(1, restriction.length))
+      }
+      if (permited) {
         return this.some();
+      } else {
+        let embed = new EmbedBuilder()
+          .setDescription('test')
+          .setColor("#ed4245")
+        await interaction.reply({ embeds: [embed] })
+        return this.none();
+      }
     } else {
       return this.none();
     }
@@ -44,8 +59,10 @@ export class ButtonHandler extends InteractionHandler {
     const user = this.container.client.users.cache.get(dataArray[0])
 
     const botone = new ActionRowBuilder<ButtonBuilder>
-    const module1 = await import('../general/entregar')
+    const module1 = await import('./e')
+    const module2 = await import('./w')
     await module1.build(botone, { disabled: false, author: interaction.user.id }, dataArray)
+    await module2.build(botone, { disabled: false, author: interaction.user.id }, dataArray)
 
      await interaction.message.edit({
         components: [botone],
@@ -63,7 +80,7 @@ export class ButtonHandler extends InteractionHandler {
                     name: 'Summoner Name', value: `\`${dataArray[1]}\``, inline: true
               },
                {
-                name: 'Producto', value: `\`${dataArray[2]}\``, inline: true
+                name: 'Producto', value: `\`${dataArray[2]}\` RP`, inline: true
                 },
                  {
                      name: 'Comprobante', value: `[Click aquí](${dataArray[3]})`, inline: true
@@ -75,6 +92,34 @@ export class ButtonHandler extends InteractionHandler {
          ],
          content: `Pedido por entregar ${Emojis.Loading}`
         })
+
+        await Prisma.pedidos.create({
+            data: {
+                Referencia: dataArray[4],
+                UserID: dataArray[0],
+                Pedido: `${dataArray[2]}`,
+                Comprobante: `${dataArray[3]}`,
+            }
+        })
+
+        const usuario = await Prisma.users.findUnique({
+            where: {
+              UserID: dataArray[0]
+            }
+        })
+
+        if(!usuario){
+            await Prisma.users.create({
+                data: {
+                    UserID: dataArray[0]
+                }
+            })
+        } else {
+          await Prisma.$queryRaw`UPDATE Users
+          SET Pedidos = Pedidos + 1,
+              updatedAt = NOW(3)
+          WHERE UserID = ${dataArray[0]}`
+        }
 
      await user.createDM().then(async dm => {
             return dm.send({

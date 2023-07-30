@@ -1,9 +1,10 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from '@sapphire/framework';
 import { EmbedBuilder, TextChannel } from 'discord.js';
 import { ActionRowBuilder, ButtonInteraction, ButtonBuilder, ButtonStyle } from "discord.js";
-import { Bot } from '../../../';
+import { Bot } from '../../..';
 import { Color } from '../../../utils/colors/colors';
 import { Emojis } from '../../../utils/emojis/emojis';
+import { Log } from '../../../utils/log';
 
 interface optionsObject {
   disabled: boolean | undefined,
@@ -14,7 +15,7 @@ export const build = async (actionRowBuilder: ActionRowBuilder, options: options
   return new Promise(resolve => {
     actionRowBuilder.addComponents(
       new ButtonBuilder()
-        .setCustomId(`general:accept_u${options.author}_${data?.join(",")}`)
+        .setCustomId(`g:a_a_${data?.join(",")}`)
         .setLabel("Confirmar Pedido")
         .setDisabled(options?.disabled)
         .setStyle(ButtonStyle.Success)
@@ -33,8 +34,22 @@ export class ButtonHandler extends InteractionHandler {
   public override async parse(interaction: ButtonInteraction) {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-    if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
-      return this.some();
+    if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+      // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+      const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
+      let permited: boolean = restriction.startsWith("a")
+      if (!permited && restriction.startsWith("u")) {
+        permited = (interaction.user.id == restriction.slice(1, restriction.length))
+      }
+      if (permited) {
+        return this.some();
+      } else {
+        let embed = new EmbedBuilder()
+          .setDescription('test')
+          .setColor("#ed4245")
+        await interaction.reply({ embeds: [embed] })
+        return this.none();
+      }
     } else {
       return this.none();
     }
@@ -42,6 +57,7 @@ export class ButtonHandler extends InteractionHandler {
 
   public async run(interaction: ButtonInteraction) {
     const dataArray = interaction.customId.split(/\_+/g)[2].split(/\,+/g)
+    Log.info(dataArray)
     const confirmed = new EmbedBuilder()
     .setDescription(`Tu pedido ha sido enviado a revisión, recibirás una confirmación en este chat en breves. ${Emojis.Info}`)
     .setColor(Color.Success)
@@ -50,8 +66,8 @@ export class ButtonHandler extends InteractionHandler {
 
     const botone = new ActionRowBuilder<ButtonBuilder>
     const channel = Bot.channels.cache.get("1134356455110213823") as TextChannel
-    const module1 = await import('./acceptadmin')
-    const module2 = await import('./canceladmin')
+    const module1 = await import('./aa')
+    const module2 = await import('./ca')
     await module1.build(botone, {disabled: false, author: interaction.user.id}, dataArray)
     await module2.build(botone, {disabled: false, author: interaction.user.id}, dataArray)
 
@@ -70,7 +86,7 @@ export class ButtonHandler extends InteractionHandler {
                     name: 'Summoner Name', value: `\`${dataArray[1]}\``, inline: true
               },
                {
-                   name: 'Producto', value: `\`${dataArray[2]}\``, inline: true
+                   name: 'Producto', value: `\`${dataArray[2]}\` RP`, inline: true
                 },
                 {
                     name: 'Comprobante', value: `[Click aquí](${dataArray[3]})`, inline: true
@@ -81,7 +97,7 @@ export class ButtonHandler extends InteractionHandler {
             })
             .setTimestamp()
         ],
-        content: '@'
+        content: '@here'
     })
   }
 }
