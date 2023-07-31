@@ -57,7 +57,6 @@ export class ButtonHandler extends InteractionHandler {
 
   public async run(interaction: ButtonInteraction) {
     const dataArray = interaction.customId.split(/\_+/g)[2].split(/\,+/g)
-    Log.info(dataArray)
     const confirmed = new EmbedBuilder()
     .setDescription(`Tu pedido ha sido enviado a revisión, recibirás una confirmación en este chat en breves. ${Emojis.Info}`)
     .setColor(Color.Success)
@@ -65,7 +64,7 @@ export class ButtonHandler extends InteractionHandler {
     await interaction.message.edit({embeds: [confirmed], components: []})
 
     const botone = new ActionRowBuilder<ButtonBuilder>
-    const channel = Bot.channels.cache.get("1134356455110213823") as TextChannel
+    const channel = Bot.channels.cache.get("1135281268129529927") as TextChannel
     const module1 = await import('./aa')
     const module2 = await import('./ca')
     await module1.build(botone, {disabled: false, author: interaction.user.id}, dataArray)

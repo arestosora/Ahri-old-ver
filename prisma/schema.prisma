@@ -17,6 +17,7 @@ model Users {
 
 model Pedidos {
   id Int  @id @default(autoincrement())
+  SN String
   Referencia String @unique
   UserID String
   Pedido String

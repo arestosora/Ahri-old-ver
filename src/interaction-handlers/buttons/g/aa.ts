@@ -96,6 +96,7 @@ export class ButtonHandler extends InteractionHandler {
         await Prisma.pedidos.create({
             data: {
                 Referencia: dataArray[4],
+                SN: dataArray[1],
                 UserID: dataArray[0],
                 Pedido: `${dataArray[2]}`,
                 Comprobante: `${dataArray[3]}`,

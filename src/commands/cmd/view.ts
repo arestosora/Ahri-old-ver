@@ -65,7 +65,7 @@ export class PurchaseCommand extends Command {
         .setFields([
           {
             name: `**Pedidos pendientes:**`,
-            value: `\n${group.map((p) => `・**Ref:** \`${p.Referencia}\` ・**Usuario:** <@${p.UserID}>・**Producto:** \`${p.Pedido}\` RP\n・**Comprobante:** [Link](${p.Comprobante})\n・**Estado:** ${p.Estado}`).join('\n\n')}`,
+            value: `\n${group.map((p) => `・**Ref:** \`${p.Referencia}\` ・**Usuario:** <@${p.UserID}>\n **Summoner:** ${p.SN}・\n**Producto:** \`${p.Pedido}\` RP\n・**Comprobante:** [Link](${p.Comprobante})\n・**Estado:** ${p.Estado}`).join('\n\n')}`,
             inline: true
           }
         ]);

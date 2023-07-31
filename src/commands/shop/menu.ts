@@ -18,7 +18,6 @@ export class PurchaseCommand extends Command {
       fullCategory: ["shop"],
       requiredClientPermissions: ["SendMessages"],
       requiredUserPermissions: ["Administrator"],
-      cooldownDelay: Time.Second * 200,
     });
   }
 
@@ -81,6 +80,12 @@ export class PurchaseCommand extends Command {
           style: ButtonStyle.Primary,
           customId: "shop:precios",
           emoji: "1135058349621252106",
+        }),
+        new ButtonBuilder({
+          label: "Combos de Inaguración",
+          style: ButtonStyle.Secondary,
+          customId: "shop:combos",
+          emoji: "1135684868701949962",
         })
       ],
     });
@@ -93,7 +98,7 @@ export class PurchaseCommand extends Command {
     })
 
     return interaction.reply({
-      content: 'Enviado',
+      content: "¡Menú enviado!",
       ephemeral: true,
     });
   }

@@ -60,6 +60,11 @@ export class ButtonHandler extends InteractionHandler {
   return interaction.reply({
     content: `Revisa tus mensajes privados. ${Emojis.Success}`,
     ephemeral: true,
+  }).catch(() => {
+    return interaction.reply({
+      content: ` ${Emojis.Error} No he podido comunicarme contigo. **¡Por favor revisa si tienes tus mensajes privados desactivados!**`,
+      ephemeral: true,
+    });
   });
   }
 }

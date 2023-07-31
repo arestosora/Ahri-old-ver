@@ -132,11 +132,31 @@ export const build = async (
             emoji: "1134181246029807637",
             value: "13770:HIM",
           },
-          // {
-          //   label: "Pedido Personalizado",
-          //   emoji: "1134760898045681754",
-          //   value: "custom:HIM",
-          // }
+           {
+             label: "Combo Skins & Botin Hextech 1",
+             emoji: "1135684868701949962",
+             value: "custom1:HIM",
+           },
+           {
+            label: "Combo Skins & Botin Hextech 2",
+            emoji: "1135684868701949962",
+            value: "custom2:HIM",
+          },
+          {
+            label: "Combo Skins & Botin Hextech 3",
+            emoji: "1135684868701949962",
+            value: "custom3:HIM",
+          },
+          {
+            label: "Combo Skins & Botin Hextech 4",
+            emoji: "1135684868701949962",
+            value: "custom4:HIM",
+          },
+          {
+            label: "Combo Skins & Botin Hextech 5",
+            emoji: "1135684868701949962",
+            value: "custom5:HIM",
+          },
         )
     );
     resolve(true);
@@ -543,6 +563,96 @@ export class ShopMenuHandler extends InteractionHandler {
 
           break;
 
+          case "custom1":
+            await interaction.update({
+              embeds: [
+                new EmbedBuilder()
+                  .setAuthor({
+                    name: this.container.client.user.username,
+                    iconURL: this.container.client.user.displayAvatarURL(),
+                  })
+                  .setDescription(
+                    "Has seleccionado el `Combo 1`. Ahora por favor escribe tu nombre de invocador."
+                  )
+                  .setColor(Color.Success),
+              ],
+              components: [],
+            });
+  
+            break;
+
+            case "custom2":
+              await interaction.update({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: this.container.client.user.username,
+                      iconURL: this.container.client.user.displayAvatarURL(),
+                    })
+                    .setDescription(
+                      "Has seleccionado el paquete `Combo 2`. Ahora por favor escribe tu nombre de invocador."
+                    )
+                    .setColor(Color.Success),
+                ],
+                components: [],
+              });
+    
+              break;
+
+              case "custom3":
+                await interaction.update({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: this.container.client.user.username,
+                        iconURL: this.container.client.user.displayAvatarURL(),
+                      })
+                      .setDescription(
+                        "Has seleccionado el paquete `Combo 3`. Ahora por favor escribe tu nombre de invocador."
+                      )
+                      .setColor(Color.Success),
+                  ],
+                  components: [],
+                });
+      
+                break;
+
+                case "custom4":
+                  await interaction.update({
+                    embeds: [
+                      new EmbedBuilder()
+                        .setAuthor({
+                          name: this.container.client.user.username,
+                          iconURL: this.container.client.user.displayAvatarURL(),
+                        })
+                        .setDescription(
+                          "Has seleccionado el paquete `Combo 4`. Ahora por favor escribe tu nombre de invocador."
+                        )
+                        .setColor(Color.Success),
+                    ],
+                    components: [],
+                  });
+        
+                  break;
+
+                  case "custom5":
+                    await interaction.update({
+                      embeds: [
+                        new EmbedBuilder()
+                          .setAuthor({
+                            name: this.container.client.user.username,
+                            iconURL: this.container.client.user.displayAvatarURL(),
+                          })
+                          .setDescription(
+                            "Has seleccionado el paquete `Combo 5`. Ahora por favor escribe tu nombre de invocador."
+                          )
+                          .setColor(Color.Success),
+                      ],
+                      components: [],
+                    });
+          
+                    break;
+
       }
 
       const nameCollector = new MessageCollector(interaction.channel, {
@@ -594,7 +704,7 @@ export class ShopMenuHandler extends InteractionHandler {
               iconURL: interaction.user.displayAvatarURL(),
             })
             .setDescription(
-              `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.`
+              `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
             )
             .setColor(Color.Success);
 
