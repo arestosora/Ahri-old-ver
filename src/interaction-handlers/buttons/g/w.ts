@@ -48,7 +48,7 @@ export class ButtonHandler extends InteractionHandler {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
     if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-      // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+     //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -124,21 +124,27 @@ export class ButtonHandler extends InteractionHandler {
       }
     })
 
-    await user.createDM().then(async (dm) => {
-      return dm.send({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription(
-              `Al parecer tu pedido se tardará un poco más de lo esperado en ser entregado ${Emojis.Success}.\n**¡Por favor ten paciencia!** pronto se entregará a tu cuenta ${Emojis.Love}`
-            )
-            .setColor(Color.Info)
-            .setTimestamp()
-            .setAuthor({
-              name: Bot.user.username,
-              iconURL: Bot.user.displayAvatarURL(),
-            }),
-        ],
+    try {
+      await user.createDM().then(async (dm) => {
+        return dm.send({
+          embeds: [
+            new EmbedBuilder()
+              .setDescription(
+                `Al parecer tu pedido se tardará un poco más de lo esperado en ser entregado ${Emojis.Success}.\n**¡Por favor ten paciencia!** pronto se entregará a tu cuenta ${Emojis.Love}`
+              )
+              .setColor(Color.Info)
+              .setTimestamp()
+              .setAuthor({
+                name: Bot.user.username,
+                iconURL: Bot.user.displayAvatarURL(),
+              }),
+          ],
+        });
       });
-    });
+    } catch (error) {
+
+    }
+
+
   }
 }

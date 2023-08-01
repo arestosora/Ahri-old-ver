@@ -21,38 +21,26 @@ export class ButtonHandler extends InteractionHandler {
   public async run(interaction: ButtonInteraction) {
 
     const embed = new EmbedBuilder()
-        .setDescription(`Qué precios quieres ver? ${Emojis.Love}`)
+    .setFields([
+      {
+        name: ':flag_co:・Colombia', value: '<:nequi:1134763235522924596> **Nequi:** 3015077533\n<:bancolombia:1134763479925010518> **Bancolombia:** Próximamente.', inline: true
+      },
+      {
+        name: ':flag_mx:・México', value: '<:azteca:1135804159501815859> **Banco Azteca:** Próximamente.', inline: true
+      },
+      {
+        name: ':flag_us:・Internacional', value: '<:paypal:1134763669855678546> **Paypal:** Próximamente.\n<:binance:1135310399084965923> **Binance:** Próximamente.', inline: true
+      }
+    ])
         .setColor(Color.Info)
         .setAuthor({
             name: Bot.user.username,
             iconURL: Bot.user.displayAvatarURL()
         })
-        .setThumbnail(`https://media.tenor.com/23mTA_P6BFkAAAAd/ahri.gif`)
-
-
-        const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
-          new ButtonBuilder()
-            .setCustomId(`shop:precios_usd`)
-            .setLabel("USD")
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('1135058963562500126'),
-
-            new ButtonBuilder()
-            .setCustomId(`shop:precios_cop`)
-            .setLabel("COP")
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('1135058936366645348'),
-
-            new ButtonBuilder()
-            .setCustomId(`shop:precios_mxn`)
-            .setLabel("MXN")
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('1135058951302561852'),
-        )
+        .setImage(`https://i.imgur.com/vjwjRUF.jpg`)
 
     await interaction.reply({
       embeds: [embed],
-      components: [buttons],
       ephemeral: true
     });
   }

@@ -8,17 +8,16 @@ datasource db {
 }
 
 model Users {
-  id        Int      @id @default(autoincrement())
-  UserID     String   @unique
+  UserID     String   @id
   Pedidos     Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Pedidos {
-  id Int  @id @default(autoincrement())
+  GuildID String @default("1133932007236309072") 
   SN String
-  Referencia String @unique
+  Referencia String @id
   UserID String
   Pedido String
   Estado String @default("Pendiente")
@@ -28,6 +27,6 @@ model Pedidos {
 }
 
 model Config {
-  GuildID String @id
+  GuildID String @id @default("1133932007236309072")
   Pedidos_Enabled Boolean @default(true) 
 }

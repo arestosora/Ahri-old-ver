@@ -50,21 +50,21 @@ export class ButtonHandler extends InteractionHandler {
     const options = await import('../menus/shop');
     await options.build(row, { disabled: false, author: interaction.user.id }, [])
 
-  await interaction.user.createDM().then((channel) => {
-    channel.send({
-      embeds: [Embed],
-      components: [row],
-    });
-  });
+    try {
+      await interaction.user.send({
+        embeds: [Embed],
+        components: [row],
+        
+      })
+    } catch (error) {
+      return interaction.reply({
+        content: `No he podido comunicarme contigo. **¡Por favor revisa si tienes tus mensajes privados desactivados!**. ${Emojis.Error}`,
+      })
+    }
 
   return interaction.reply({
     content: `Revisa tus mensajes privados. ${Emojis.Success}`,
     ephemeral: true,
-  }).catch(() => {
-    return interaction.reply({
-      content: ` ${Emojis.Error} No he podido comunicarme contigo. **¡Por favor revisa si tienes tus mensajes privados desactivados!**`,
-      ephemeral: true,
-    });
-  });
+  })
   }
 }

@@ -90,7 +90,7 @@ export class PurchaseCommand extends Command {
       ],
     });
 
-    const canala = this.container.client.channels.cache.get('1133964283764555787') as TextChannel
+    const canala = this.container.client.channels.cache.get('1134210512079564851') as TextChannel
 
     await canala.send({
       embeds: [embed],

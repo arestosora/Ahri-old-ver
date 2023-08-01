@@ -545,6 +545,8 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          break;
+
         case "13770":
           await interaction.update({
             embeds: [
@@ -715,8 +717,7 @@ export class ShopMenuHandler extends InteractionHandler {
           const imageCollector = new MessageCollector(interaction.channel, {
             filter: (msg) =>
               msg.author.id === interaction.user.id && msg.attachments.size > 0,
-            max: 1,
-            time: 20000,
+            max: 1
           });
 
           imageCollector.on("collect", async (message) => {

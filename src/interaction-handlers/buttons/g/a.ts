@@ -64,7 +64,7 @@ export class ButtonHandler extends InteractionHandler {
     await interaction.message.edit({embeds: [confirmed], components: []})
 
     const botone = new ActionRowBuilder<ButtonBuilder>
-    const channel = Bot.channels.cache.get("1135281268129529927") as TextChannel
+    const channel = Bot.channels.cache.get("1135681215433801819") as TextChannel
     const module1 = await import('./aa')
     const module2 = await import('./ca')
     await module1.build(botone, {disabled: false, author: interaction.user.id}, dataArray)
@@ -96,7 +96,7 @@ export class ButtonHandler extends InteractionHandler {
             })
             .setTimestamp()
         ],
-        content: '@here'
+        content: '@'
     })
   }
 }

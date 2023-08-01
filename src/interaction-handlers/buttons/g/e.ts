@@ -36,7 +36,7 @@ export class ButtonHandler extends InteractionHandler {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
     if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-      // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+     //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -98,23 +98,42 @@ export class ButtonHandler extends InteractionHandler {
       }
     })
 
-     await user.createDM().then(async dm => {
-            return dm.send({
-                embeds: [
-                    new EmbedBuilder()
-                    .setDescription(`Tu pedido ha sido entregado correctamente ${Emojis.Success}.\n**¡Gracias por comprar con nosotros!** ${Emojis.Love}`)
-                    .setColor(Color.Success)
-                    .setTimestamp()
-                    .setAuthor({
-                        name: Bot.user.username,
-                        iconURL: Bot.user.displayAvatarURL()
-                    })
-                ]
-            })
-     })
+    try {
+      await user.createDM().then(async dm => {
+        return dm.send({
+            embeds: [
+                new EmbedBuilder()
+                .setDescription(`Tu pedido ha sido entregado correctamente ${Emojis.Success}.\n**¡Gracias por comprar con nosotros!** ${Emojis.Love}`)
+                .setColor(Color.Success)
+                .setTimestamp()
+                .setAuthor({
+                    name: Bot.user.username,
+                    iconURL: Bot.user.displayAvatarURL()
+                })
+            ]
+        })
+ })
+    } catch (error) {}
 
+    const rptotal = await Prisma.pedidos.findMany({
+      where: {
+        GuildID: '1133932007236309072',
+      },
+    });
+    
+    let sumOfNumbers = 0;
+    
+    rptotal.forEach((pedido) => {
+      const parsedNumber = parseInt(pedido.Pedido);
+      if (!isNaN(parsedNumber)) {
+        sumOfNumbers += parsedNumber;
+      }
+    });
+
+    const formattedSum = this.formatNumber(sumOfNumbers);
 
      const entregados = this.container.client.channels.cache.get('1135001197573591161') as VoiceChannel
+     const rpentregado = this.container.client.channels.cache.get('1135801219756081172') as VoiceChannel
 
      const contador = await Prisma.pedidos.findMany({
         where: {
@@ -123,6 +142,17 @@ export class ButtonHandler extends InteractionHandler {
      })
      
      await entregados.setName(`Entregados: ${contador.length}`).catch(() => {})
+     await rpentregado.setName(`RP Entregado: ${formattedSum}`).catch(() => {})
  
+  }
+
+  private formatNumber(number) {
+    if (number >= 1000000) {
+      return (number / 1000000).toFixed(2) + "M";
+    } else if (number >= 1000) {
+      return (number / 1000).toFixed(2) + "K";
+    } else {
+      return number.toString();
+    }
   }
 }
