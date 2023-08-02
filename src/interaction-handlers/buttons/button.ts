@@ -1,7 +1,6 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from '@sapphire/framework';
 import { EmbedBuilder, type ButtonInteraction, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { Emojis } from '../../utils/emojis/emojis';
-import { Color } from '../../utils/colors/colors';
+import { Emojis, Color } from '../../utils/index';
 import { Prisma } from '../../structures/PrismaClient';
 
 export class ButtonHandler extends InteractionHandler {

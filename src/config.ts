@@ -2,5 +2,13 @@ import "dotenv/config";
 
 export const Config = {
     Token: process.env.TOKEN,
-    Admins: ['1122960236542701750', '1122656816371863622']
+    channels: {
+        Pedidos: process.env.PEDIDOS_CHANNEL,
+        Menu: process.env.MENU_CHANNEL,
+        Entregados: process.env.ENTREGADOS_VOICE_CHANNEL,
+        RPTotal: process.env.RPTOTAL_VOICE_CHANNEL,
+    },
+    images: {
+        Precios: process.env.PRECIOSIMG
+    }
 }

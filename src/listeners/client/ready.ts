@@ -1,6 +1,6 @@
 import { Listener } from "@sapphire/framework";
 import { Client } from "discord.js";
-import { Log } from "../../utils/log/index";
+import { Log } from "../../utils/index";
 
 export class ReadyListener extends Listener {
   public constructor(context: Listener.Context, options: Listener.Options) {
@@ -11,6 +11,6 @@ export class ReadyListener extends Listener {
   }
 
   public async run(client: Client) {
-    return Log.success(`Logged in as ${client.user.tag}`);
+    return Log.start(`Logged in as ${client.user.tag}`);
   }
 }

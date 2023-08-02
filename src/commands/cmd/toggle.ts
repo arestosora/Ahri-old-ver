@@ -1,14 +1,6 @@
 import { ChatInputCommand, Command } from "@sapphire/framework";
-import { Time } from "@sapphire/time-utilities";
-import {
-  ActionRowBuilder,
-  ButtonStyle,
-  ButtonBuilder,
-  EmbedBuilder,
-} from "discord.js";
-import { Color } from "../../utils/colors/colors";
 import { Prisma } from "../../structures/PrismaClient";
-import { Emojis } from "../../utils/emojis/emojis";
+import { Emojis } from "../../utils/index";
 
 export class PurchaseCommand extends Command {
   public constructor(context: Command.Context, options: Command.Options) {

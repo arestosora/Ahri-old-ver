@@ -1,31 +1,11 @@
-import {
-  InteractionHandler,
-  InteractionHandlerTypes,
-  PieceContext,
-} from "@sapphire/framework";
-import {
-  StringSelectMenuInteraction,
-  EmbedBuilder,
-  MessageCollector,
-  ActionRowBuilder,
-  ButtonBuilder,
-  StringSelectMenuBuilder,
-} from "discord.js";
-import { Color } from "../../utils/colors/colors";
-import { IDGenerator } from "../../utils/functions/IdGenerator";
-import { Log } from "../../utils/log";
-import { Emojis } from "../../utils/emojis/emojis";
+import { InteractionHandler, InteractionHandlerTypes, PieceContext } from "@sapphire/framework";
+import { StringSelectMenuInteraction, EmbedBuilder, MessageCollector, ActionRowBuilder, ButtonBuilder,StringSelectMenuBuilder } from "discord.js";
+import { Color, Emojis, IDGenerator, shortenURL, Log } from "../../utils/index";
 import { Bot } from "../..";
-import TinyURL from "tinyurl";
-
 
 interface optionsObject {
   disabled: boolean | undefined;
   author: string | undefined;
-}
-
-interface toreplyObject {
-  embed: EmbedBuilder | undefined;
 }
 
 export const build = async (
@@ -162,7 +142,6 @@ export const build = async (
     resolve(true);
   });
 };
-
 export class ShopMenuHandler extends InteractionHandler {
   public constructor(ctx: PieceContext, options: InteractionHandler.Options) {
     super(ctx, {
@@ -745,7 +724,7 @@ export class ShopMenuHandler extends InteractionHandler {
                 ],
               });
             } else {
-               await this.shortenURL(attachmentURL).then(async (shortURL) =>{
+               await shortenURL(attachmentURL).then(async (shortURL) =>{
                   const AttachmentEmbed = new EmbedBuilder()
                   .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
                   .setAuthor({
@@ -795,7 +774,7 @@ export class ShopMenuHandler extends InteractionHandler {
                   components: [botone],
                 });
                }).catch((error) => {
-                console.error('Error al acortar la URL:', error);
+                Log.error('Error al acortar la URL:', error);
               });
             }
           });
@@ -819,19 +798,5 @@ export class ShopMenuHandler extends InteractionHandler {
     }
   }
 
-  private shortenURL(url: string) {
-    return new Promise((resolve, reject) => {
-      TinyURL.shorten(url, (res) => {
-        if (res.startsWith('Error:')) {
-          reject(new Error(res));
-        } else {
-          resolve(res);
-        }
-      });
-    });
-  }
-}
 
-
-//    ymmxFmC7IQzN8aHoev1DIb5zB5YRpzrlTFQcuB96MeUf4J3DGTN77XGcpUSE
-        
+}        

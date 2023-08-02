@@ -1,5 +1,4 @@
 import { LogLevel, SapphireClient } from "@sapphire/framework";
-import { Time } from "@sapphire/time-utilities";
 import { Partials, GatewayIntentBits, ActivityType } from "discord.js";
 import { Config } from "../config";
 
@@ -16,10 +15,6 @@ export class Client extends SapphireClient {
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.GuildMessageReactions,
       ],
-      defaultCooldown: {
-        delay: Time.Second * 5,
-        filteredUsers: ['', '', ''],
-      },
       partials: [
         Partials.Channel,
         Partials.GuildMember,

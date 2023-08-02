@@ -1,9 +1,9 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from '@sapphire/framework';
 import { EmbedBuilder, Emoji, TextChannel } from 'discord.js';
 import { ActionRowBuilder, ButtonInteraction, ButtonBuilder, ButtonStyle } from "discord.js";
-import { Color } from '../../../utils/colors/colors';
-import { Emojis } from '../../../utils/emojis/emojis';
-import { Prisma } from '../../../structures/PrismaClient';
+import { Color, Emojis } from "../../../utils/index";
+import { Prisma } from "../../../structures/PrismaClient";
+import { Bot } from "../../..";
 
 interface optionsObject {
   disabled: boolean | undefined,

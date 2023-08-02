@@ -2,9 +2,9 @@ import { InteractionHandler, InteractionHandlerTypes, PieceContext } from '@sapp
 import { EmbedBuilder, TextChannel, VoiceChannel } from 'discord.js';
 import { ActionRowBuilder, ButtonInteraction, ButtonBuilder, ButtonStyle } from "discord.js";
 import { Bot } from '../../..';
-import { Color } from '../../../utils/colors/colors';
-import { Emojis } from '../../../utils/emojis/emojis';
 import { Prisma } from '../../../structures/PrismaClient';
+import { Config } from '../../../config';
+import { formatNumber, Color, Emojis } from '../../../utils/index';
 
 interface optionsObject {
   disabled: boolean | undefined,
@@ -130,10 +130,10 @@ export class ButtonHandler extends InteractionHandler {
       }
     });
 
-    const formattedSum = this.formatNumber(sumOfNumbers);
+    const formattedSum = await formatNumber(sumOfNumbers);
 
-     const entregados = this.container.client.channels.cache.get('1135001197573591161') as VoiceChannel
-     const rpentregado = this.container.client.channels.cache.get('1135801219756081172') as VoiceChannel
+     const entregados = this.container.client.channels.cache.get(Config.channels.Entregados) as VoiceChannel
+     const rpentregado = this.container.client.channels.cache.get(Config.channels.Entregados) as VoiceChannel
 
      const contador = await Prisma.pedidos.findMany({
         where: {
@@ -146,13 +146,4 @@ export class ButtonHandler extends InteractionHandler {
  
   }
 
-  private formatNumber(number) {
-    if (number >= 1000000) {
-      return (number / 1000000).toFixed(2) + "M";
-    } else if (number >= 1000) {
-      return (number / 1000).toFixed(2) + "K";
-    } else {
-      return number.toString();
-    }
-  }
 }

@@ -1,14 +1,8 @@
 import { ChatInputCommand, Command } from "@sapphire/framework";
-import { Time } from "@sapphire/time-utilities";
-import {
-  ActionRowBuilder,
-  ButtonStyle,
-  ButtonBuilder,
-  EmbedBuilder,
-  TextChannel,
-} from "discord.js";
-import { Color } from "../../utils/colors/colors";
+import { ActionRowBuilder, ButtonStyle, ButtonBuilder, EmbedBuilder, TextChannel } from "discord.js";
+import { Color } from "../../utils/index";
 import { Bot } from "../..";
+import { Config } from "../../config";
 
 export class PurchaseCommand extends Command {
   public constructor(context: Command.Context, options: Command.Options) {
@@ -28,21 +22,15 @@ export class PurchaseCommand extends Command {
       (builder) =>
         builder.setName("menu").setDescription("Muestra el menú de la tienda."),
       {
-        idHints: ["1134071128302817331"],
+        idHints: [""],
       }
     );
   }
 
-  public override async chatInputRun(
-    interaction: ChatInputCommand.Interaction
-  ) {
+  public override async chatInputRun(interaction: ChatInputCommand.Interaction) {
     const embed = new EmbedBuilder()
       .setTitle("¡Bienvenido a nuestra tienda en Discord! ")
       .setThumbnail(interaction.client.user.displayAvatarURL({ extension: "jpg" }))
-      // .setAuthor({
-      //   name: interaction.client.user.tag,
-      //   iconURL: interaction.client.user.displayAvatarURL(),
-      // })
       .setFooter({
         text: "Se cumplen términos y condiciones.",
         iconURL: Bot.user.displayAvatarURL(),
@@ -90,9 +78,9 @@ export class PurchaseCommand extends Command {
       ],
     });
 
-    const canala = this.container.client.channels.cache.get('1134210512079564851') as TextChannel
+    const canal = this.container.client.channels.cache.get(Config.channels.Menu) as TextChannel
 
-    await canala.send({
+    await canal.send({
       embeds: [embed],
       components: [row]
     })

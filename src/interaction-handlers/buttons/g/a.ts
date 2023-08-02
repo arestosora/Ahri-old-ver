@@ -4,7 +4,7 @@ import { ActionRowBuilder, ButtonInteraction, ButtonBuilder, ButtonStyle } from 
 import { Bot } from '../../..';
 import { Color } from '../../../utils/colors/colors';
 import { Emojis } from '../../../utils/emojis/emojis';
-import { Log } from '../../../utils/log';
+import { Config } from '../../../config';
 
 interface optionsObject {
   disabled: boolean | undefined,
@@ -64,7 +64,7 @@ export class ButtonHandler extends InteractionHandler {
     await interaction.message.edit({embeds: [confirmed], components: []})
 
     const botone = new ActionRowBuilder<ButtonBuilder>
-    const channel = Bot.channels.cache.get("1135681215433801819") as TextChannel
+    const channel = Bot.channels.cache.get(Config.channels.Pedidos) as TextChannel
     const module1 = await import('./aa')
     const module2 = await import('./ca')
     await module1.build(botone, {disabled: false, author: interaction.user.id}, dataArray)

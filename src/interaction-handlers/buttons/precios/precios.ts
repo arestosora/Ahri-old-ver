@@ -1,8 +1,8 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from '@sapphire/framework';
-import { EmbedBuilder, type ButtonInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { Emojis } from '../../../utils/emojis/emojis';
-import { Color } from '../../../utils/colors/colors';
+import { EmbedBuilder, type ButtonInteraction } from 'discord.js';
+import { Emojis, Color } from '../../../utils/index';
 import { Bot } from '../../..';
+import { Config } from '../../../config';
 
 export class ButtonHandler extends InteractionHandler {
   public constructor(ctx: PieceContext, options: InteractionHandler.Options) {
@@ -23,13 +23,13 @@ export class ButtonHandler extends InteractionHandler {
     const embed = new EmbedBuilder()
     .setFields([
       {
-        name: ':flag_co:・Colombia', value: '<:nequi:1134763235522924596> **Nequi:** 3015077533\n<:bancolombia:1134763479925010518> **Bancolombia:** Próximamente.', inline: true
+        name: `${Emojis.Colombia}・Colombia`, value: `${Emojis.Nequi} **Nequi:** \`3015077533\`\n${Emojis.Bancolombia} **Bancolombia:** Próximamente.`, inline: true
       },
       {
-        name: ':flag_mx:・México', value: '<:azteca:1135804159501815859> **Banco Azteca:** Próximamente.', inline: true
+        name: `${Emojis.Mexico}・México`, value: `${Emojis.BancoAzteca} **Banco Azteca:** \`4027665836297219\`.`, inline: true
       },
       {
-        name: ':flag_us:・Internacional', value: '<:paypal:1134763669855678546> **Paypal:** Próximamente.\n<:binance:1135310399084965923> **Binance:** Próximamente.', inline: true
+        name: `${Emojis.USA}・Internacional`, value: `${Emojis.Paypal} **Paypal:** Próximamente.\n${Emojis.Binance} **Binance:** Próximamente.`, inline: true
       }
     ])
         .setColor(Color.Info)
@@ -37,7 +37,7 @@ export class ButtonHandler extends InteractionHandler {
             name: Bot.user.username,
             iconURL: Bot.user.displayAvatarURL()
         })
-        .setImage(`https://i.imgur.com/vjwjRUF.jpg`)
+        .setImage(Config.images.Precios)
 
     await interaction.reply({
       embeds: [embed],

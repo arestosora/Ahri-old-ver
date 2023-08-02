@@ -1,10 +1,8 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from '@sapphire/framework';
 import { EmbedBuilder } from 'discord.js';
 import { ActionRowBuilder, ButtonInteraction, ButtonBuilder, ButtonStyle } from "discord.js";
-import { Color } from '../../../utils/colors/colors';
-import { Emojis } from '../../../utils/emojis/emojis';
-import { Bot } from '../../..';
-
+import { Color, Emojis } from "../../../utils/index";
+import { Bot } from "../../..";
 interface optionsObject {
   disabled: boolean | undefined,
   author: string | undefined

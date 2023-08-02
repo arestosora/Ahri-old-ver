@@ -30,3 +30,11 @@ model Config {
   GuildID String @id @default("1133932007236309072")
   Pedidos_Enabled Boolean @default(true) 
 }
+
+model Cuentas {
+  Nickname String
+  Username String @id
+  Password String
+  RPTotal Int @default(0)
+  RPDisponibles Int @default(0)
+}

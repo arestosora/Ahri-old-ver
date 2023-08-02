@@ -4,7 +4,7 @@ const options: SignaleOptions = {
     disabled: false,
     interactive: false,
     logLevel: 'info',
-    scope: 'Caitlyn',
+    scope: 'Ahri',
 };
 export default class Logger extends Signale {
     constructor() {
