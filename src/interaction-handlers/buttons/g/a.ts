@@ -96,7 +96,7 @@ export class ButtonHandler extends InteractionHandler {
             })
             .setTimestamp()
         ],
-        content: '@'
+        content: '@here'
     })
   }
 }
