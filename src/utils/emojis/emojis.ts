@@ -15,7 +15,7 @@ export const Emojis = {
     HextechKey: '<:llave:1136139768703488010>',
     Colombia: ':flag_co:',
     Mexico: ':flag_mx:',
-    USA: 'flag_us:',
+    USA: ':flag_us:',
     BattlePass: '<:soulfightereventpass:1136127461562781817>',
     Orb: '<:soulfighterorb:1136127437659455569>',
     Paypal: '<:paypal:1134763669855678546>',

@@ -23,7 +23,7 @@ export class ButtonHandler extends InteractionHandler {
     const embed = new EmbedBuilder()
     .setFields([
       {
-        name: `${Emojis.Colombia}・Colombia`, value: `${Emojis.Nequi} **Nequi:** \`3015077533\`\n${Emojis.Bancolombia} **Bancolombia:** Próximamente.`, inline: true
+        name: `${Emojis.Colombia}・Colombia`, value: `${Emojis.Nequi} **Nequi:** \`3015077533\`\n${Emojis.Bancolombia} **Bancolombia:** Próximamente.\n${Emojis.Price} **Otros Bancos(PSE):** [Click Aquí](https://bit.ly/RPHUBPSE)`, inline: true
       },
       {
         name: `${Emojis.Mexico}・México`, value: `${Emojis.BancoAzteca} **Banco Azteca:** \`4027665836297219\`.`, inline: true
