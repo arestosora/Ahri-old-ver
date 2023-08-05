@@ -1,5 +1,5 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from "@sapphire/framework";
-import { StringSelectMenuInteraction, EmbedBuilder, MessageCollector, ActionRowBuilder, ButtonBuilder,StringSelectMenuBuilder } from "discord.js";
+import { StringSelectMenuInteraction, EmbedBuilder, MessageCollector, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
 import { Color, Emojis, IDGenerator, shortenURL, Log } from "../../utils/index";
 import { Bot } from "../..";
 
@@ -112,12 +112,12 @@ export const build = async (
             emoji: "1134181246029807637",
             value: "13770:HIM",
           },
-           {
-             label: "Combo Skins & Botin Hextech 1",
-             emoji: "1135684868701949962",
-             value: "custom1:HIM",
-           },
-           {
+          {
+            label: "Combo Skins & Botin Hextech 1",
+            emoji: "1135684868701949962",
+            value: "custom1:HIM",
+          },
+          {
             label: "Combo Skins & Botin Hextech 2",
             emoji: "1135684868701949962",
             value: "custom2:HIM",
@@ -137,6 +137,21 @@ export const build = async (
             emoji: "1135684868701949962",
             value: "custom5:HIM",
           },
+          {
+            label: "Orbes",
+            emoji: '1136127437659455569',
+            value: 'orbes:HIM'
+          },
+          {
+            label: "Skin 1350 RP",
+            emoji: '1136127437659455569',
+            value: 'skin1530:HIM'
+          },
+          {
+            label: "Skin 1820 RP",
+            emoji: '1136127437659455569',
+            value: 'skin1820:HIM'
+          }
         )
     );
     resolve(true);
@@ -153,8 +168,8 @@ export class ShopMenuHandler extends InteractionHandler {
   public override async parse(interaction: StringSelectMenuInteraction) {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-     if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-     // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+    if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+      //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -176,29 +191,25 @@ export class ShopMenuHandler extends InteractionHandler {
 
 
   public async run(interaction: StringSelectMenuInteraction) {
-    try {
+    // try {
       const UniqueID = await IDGenerator(5);
       const data = interaction.customId
         .split(/_+/g)
-        [interaction.customId.split(/_+/g).length - 1].split(/,+/g);
+      [interaction.customId.split(/_+/g).length - 1].split(/,+/g);
       const user = data[0];
 
       let selectedOption = interaction.values[0];
 
-      // Reemplazamos las variables por valores
       selectedOption = selectedOption
         .replace(":HIM", user)
         .replace("ME", interaction.user.id);
 
-      // Declaramos los argumentos
       let args: any[] = selectedOption.split(/:+/g);
 
-      // Subdividimos los argumentos en más arrays
       for (let i = 0; i < args.length; i++) {
         args[i] = [...args[i].split(/&+/g)];
       }
 
-      // Declaramos la opción como el argumento [0][0]
       const opcion = args[0][0];
 
       switch (opcion) {
@@ -544,7 +555,115 @@ export class ShopMenuHandler extends InteractionHandler {
 
           break;
 
-          case "custom1":
+        case "custom1":
+          await interaction.update({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({
+                  name: this.container.client.user.username,
+                  iconURL: this.container.client.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  "Has seleccionado el `Combo 1`. Ahora por favor escribe tu nombre de invocador."
+                )
+                .setColor(Color.Success),
+            ],
+            components: [],
+          });
+
+          break;
+
+        case "custom2":
+          await interaction.update({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({
+                  name: this.container.client.user.username,
+                  iconURL: this.container.client.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  "Has seleccionado el paquete `Combo 2`. Ahora por favor escribe tu nombre de invocador."
+                )
+                .setColor(Color.Success),
+            ],
+            components: [],
+          });
+
+          break;
+
+        case "custom3":
+          await interaction.update({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({
+                  name: this.container.client.user.username,
+                  iconURL: this.container.client.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  "Has seleccionado el paquete `Combo 3`. Ahora por favor escribe tu nombre de invocador."
+                )
+                .setColor(Color.Success),
+            ],
+            components: [],
+          });
+
+          break;
+
+        case "custom4":
+          await interaction.update({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({
+                  name: this.container.client.user.username,
+                  iconURL: this.container.client.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  "Has seleccionado el paquete `Combo 4`. Ahora por favor escribe tu nombre de invocador."
+                )
+                .setColor(Color.Success),
+            ],
+            components: [],
+          });
+
+          break;
+
+        case "custom5":
+          await interaction.update({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({
+                  name: this.container.client.user.username,
+                  iconURL: this.container.client.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  "Has seleccionado el paquete `Combo 5`. Ahora por favor escribe tu nombre de invocador."
+                )
+                .setColor(Color.Success),
+            ],
+            components: [],
+          });
+
+          break;
+
+        case "orbes":
+          await interaction.update({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({
+                  name: this.container.client.user.username,
+                  iconURL: this.container.client.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  "Has seleccionado el paquete de `Orbes`. Ahora por favor escribe tu nombre de invocador."
+                )
+                .setColor(Color.Success),
+            ],
+            components: [],
+          });
+
+          break;
+
+          case "skin1350":
             await interaction.update({
               embeds: [
                 new EmbedBuilder()
@@ -553,7 +672,7 @@ export class ShopMenuHandler extends InteractionHandler {
                     iconURL: this.container.client.user.displayAvatarURL(),
                   })
                   .setDescription(
-                    "Has seleccionado el `Combo 1`. Ahora por favor escribe tu nombre de invocador."
+                    "Has seleccionado la `Skin de 1350 RP`. Ahora por favor escribe tu nombre de invocador."
                   )
                   .setColor(Color.Success),
               ],
@@ -562,84 +681,12 @@ export class ShopMenuHandler extends InteractionHandler {
   
             break;
 
-            case "custom2":
-              await interaction.update({
-                embeds: [
-                  new EmbedBuilder()
-                    .setAuthor({
-                      name: this.container.client.user.username,
-                      iconURL: this.container.client.user.displayAvatarURL(),
-                    })
-                    .setDescription(
-                      "Has seleccionado el paquete `Combo 2`. Ahora por favor escribe tu nombre de invocador."
-                    )
-                    .setColor(Color.Success),
-                ],
-                components: [],
-              });
-    
-              break;
-
-              case "custom3":
-                await interaction.update({
-                  embeds: [
-                    new EmbedBuilder()
-                      .setAuthor({
-                        name: this.container.client.user.username,
-                        iconURL: this.container.client.user.displayAvatarURL(),
-                      })
-                      .setDescription(
-                        "Has seleccionado el paquete `Combo 3`. Ahora por favor escribe tu nombre de invocador."
-                      )
-                      .setColor(Color.Success),
-                  ],
-                  components: [],
-                });
-      
-                break;
-
-                case "custom4":
-                  await interaction.update({
-                    embeds: [
-                      new EmbedBuilder()
-                        .setAuthor({
-                          name: this.container.client.user.username,
-                          iconURL: this.container.client.user.displayAvatarURL(),
-                        })
-                        .setDescription(
-                          "Has seleccionado el paquete `Combo 4`. Ahora por favor escribe tu nombre de invocador."
-                        )
-                        .setColor(Color.Success),
-                    ],
-                    components: [],
-                  });
-        
-                  break;
-
-                  case "custom5":
-                    await interaction.update({
-                      embeds: [
-                        new EmbedBuilder()
-                          .setAuthor({
-                            name: this.container.client.user.username,
-                            iconURL: this.container.client.user.displayAvatarURL(),
-                          })
-                          .setDescription(
-                            "Has seleccionado el paquete `Combo 5`. Ahora por favor escribe tu nombre de invocador."
-                          )
-                          .setColor(Color.Success),
-                      ],
-                      components: [],
-                    });
-          
-                    break;
-
       }
 
       const nameCollector = new MessageCollector(interaction.channel, {
         filter: (msg) => msg.author.id === interaction.user.id,
         max: 1,
-        time: 80000,
+        time: 120000,
       });
 
       let name = "";
@@ -703,100 +750,77 @@ export class ShopMenuHandler extends InteractionHandler {
             const attachment = message.attachments.first();
             const attachmentURL = attachment?.url;
             const attachmentName = attachment?.name;
-            const attachmentExtension = attachmentName?.split(/\.+/g)[1];
+            await shortenURL(attachmentURL).then(async (shortURL) => {
+              const AttachmentEmbed = new EmbedBuilder()
+                .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .addFields(
+                  {
+                    name: "Nombre de invocador",
+                    value: `\`${name}\``,
+                    inline: true,
+                  },
+                  {
+                    name: "Producto",
+                    value: `\`${selectedOption}\` RP`,
+                    inline: true,
+                  },
+                  {
+                    name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                  }
 
-            if (
-              attachmentExtension !== "png" &&
-              attachmentExtension !== "jpg" &&
-              attachmentExtension !== "jpeg"
-            ) {
-              interaction.channel.send({
-                embeds: [
-                  new EmbedBuilder()
-                    .setColor(Color.Error)
-                    .setAuthor({
-                      name: `${Bot.user.username}`,
-                      iconURL: Bot.user.displayAvatarURL(),
-                    })
-                    .setDescription(
-                      `${Emojis.Error} El archivo enviado no es una imagen. Inténtalo de nuevo.`
-                    ),
-                ],
+                )
+                .setDescription(
+                  `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                )
+                .setColor(Color.Success)
+                .setImage(attachmentURL);
+
+              const botone = new ActionRowBuilder<ButtonBuilder>();
+              const module1 = await import(
+                "../../interaction-handlers/buttons/g/c"
+              );
+              const module2 = await import(
+                "../../interaction-handlers/buttons/g/a"
+              );
+
+              await module1.build(
+                botone,
+                { disabled: false, author: interaction.user.id },
+                []
+              );
+              await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+              );
+
+              await interaction.channel.send({
+                embeds: [AttachmentEmbed],
+                components: [botone],
               });
-            } else {
-               await shortenURL(attachmentURL).then(async (shortURL) =>{
-                  const AttachmentEmbed = new EmbedBuilder()
-                  .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
-                  .setAuthor({
-                    name: `${interaction.user.username}`,
-                    iconURL: interaction.user.displayAvatarURL(),
-                  })
-                  .addFields(
-                    {
-                      name: "Nombre de invocador",
-                      value: `\`${name}\``,
-                      inline: true,
-                    },
-                    {
-                      name: "Producto",
-                      value: `\`${selectedOption}\` RP`,
-                      inline: true,
-                    },
-                    {
-                      name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
-                    }
-  
-                  )
-                  .setDescription(
-                    `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
-                  )
-                  .setColor(Color.Success)
-                  .setImage(attachmentURL);
-  
-                const botone = new ActionRowBuilder<ButtonBuilder>();
-                const module1 = await import(
-                  "../../interaction-handlers/buttons/g/c"
-                );
-                const module2 = await import(
-                  "../../interaction-handlers/buttons/g/a"
-                );
-                
-                await module1.build(
-                  botone,
-                  { disabled: false, author: interaction.user.id },
-                  []
-                );
-                await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`,`${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
-                );
-  
-                await interaction.channel.send({
-                  embeds: [AttachmentEmbed],
-                  components: [botone],
-                });
-               }).catch((error) => {
-                Log.error('Error al acortar la URL:', error);
-              });
-            }
+            }).catch((error) => {
+              Log.error('Error al acortar la URL:', error);
+            });
+
           });
         }
       });
-    } catch (error) {
-      Log.error(error);
-      return interaction.channel.send({
-        embeds: [
-          new EmbedBuilder()
-            .setAuthor({
-              name: `${Bot.user.username}`,
-              iconURL: Bot.user.displayAvatarURL(),
-            })
-            .setColor(Color.Error)
-            .setDescription(
-              `${Emojis.Error} Ha ocurrido un error al realizar tu pedido, inténtalo de nuevo. En caso de que el error persista, contacta con los administradores.`
-            ),
-        ],
-      });
-    }
+    // } catch (error) {
+    //   Log.error(error);
+    //   return interaction.channel.send({
+    //     embeds: [
+    //       new EmbedBuilder()
+    //         .setAuthor({
+    //           name: `${Bot.user.username}`,
+    //           iconURL: Bot.user.displayAvatarURL(),
+    //         })
+    //         .setColor(Color.Error)
+    //         .setDescription(
+    //           `${Emojis.Error} Ha ocurrido un error al realizar tu pedido, inténtalo de nuevo. En caso de que el error persista, contacta con los administradores.`
+    //         ),
+    //     ],
+    //   });
+    // }
   }
-
-
 }        

@@ -22,6 +22,7 @@ model Pedidos {
   Pedido String
   Estado String @default("Pendiente")
   Comprobante String
+  Cuentas_Asignadas String?
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
 }
@@ -35,6 +36,20 @@ model Cuentas {
   Nickname String
   Username String @id
   Password String
-  RPTotal Int @default(0)
-  RPDisponibles Int @default(0)
+  RPTotal Int @default(2295)
+  RPDisponibles Int @default(2295)
+  Estado String @default("Disponible")
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+model Cuentas_Combos {
+  Nickname String
+  Username String @id
+  Password String
+  RPTotal Int @default(2295)
+  RPDisponibles Int @default(2295)
+  Estado String @default("Disponible")
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 }

@@ -36,8 +36,8 @@ export class ButtonHandler extends InteractionHandler {
   public override async parse(interaction: ButtonInteraction) {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-    if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-     //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+     if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+  //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -59,7 +59,7 @@ export class ButtonHandler extends InteractionHandler {
 
   public async run(interaction: ButtonInteraction) {
     const dataArray = interaction.customId.split(/\_+/g)[2].split(/\,+/g);
-    const user = this.container.client.users.cache.get(dataArray[0]);
+    const user = await this.container.client.users.fetch(dataArray[0]);
 
     const botone = new ActionRowBuilder<ButtonBuilder>();
     const module1 = await import("./e");
@@ -69,15 +69,15 @@ export class ButtonHandler extends InteractionHandler {
       dataArray
     );
 
-    await interaction.message.edit({
+    await interaction.update({
       embeds: [
         new EmbedBuilder()
           .setDescription(
-            `Pedido de \`${user.username}\` aceptado por \`${interaction.user.username}\` y entregado ${Emojis.Success}`
+            `Pedido de \`${user.username}\` aceptado por \`${interaction.user.username}\` y puesto en espera... ${Emojis.Loading}`
           )
           .setAuthor({
-            name: interaction.user.username,
-            iconURL: interaction.user.displayAvatarURL(),
+            name: user.username,
+            iconURL: user.displayAvatarURL(),
           })
           .setColor(Color.Info)
           .setThumbnail(user.displayAvatarURL())

@@ -34,8 +34,8 @@ export class ButtonHandler extends InteractionHandler {
   public override async parse(interaction: ButtonInteraction) {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-    if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-      // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+      if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+   // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -58,45 +58,45 @@ export class ButtonHandler extends InteractionHandler {
   public async run(interaction: ButtonInteraction) {
     const dataArray = interaction.customId.split(/\_+/g)[2].split(/\,+/g)
     const confirmed = new EmbedBuilder()
-    .setDescription(`Tu pedido ha sido enviado a revisión, recibirás una confirmación en este chat en breves. ${Emojis.Info}`)
-    .setColor(Color.Success)
+      .setDescription(`Tu pedido ha sido enviado a revisión, recibirás una confirmación en este chat en breves. ${Emojis.Info}`)
+      .setColor(Color.Success)
 
-    await interaction.message.edit({embeds: [confirmed], components: []})
+    await interaction.update({ embeds: [confirmed], components: [] })
 
     const botone = new ActionRowBuilder<ButtonBuilder>
     const channel = Bot.channels.cache.get(Config.channels.Pedidos) as TextChannel
     const module1 = await import('./aa')
     const module2 = await import('./ca')
-    await module1.build(botone, {disabled: false, author: interaction.user.id}, dataArray)
-    await module2.build(botone, {disabled: false, author: interaction.user.id}, dataArray)
+    await module1.build(botone, { disabled: false, author: interaction.user.id }, dataArray)
+    await module2.build(botone, { disabled: false, author: interaction.user.id }, dataArray)
 
     return channel.send({
-        components: [botone],
-        embeds: [
-            new EmbedBuilder()
-            .setAuthor({
-                name: interaction.user.username,
-                iconURL: interaction.user.displayAvatarURL()
-            })
-            .setColor(Color.Debug)
-            .setThumbnail(interaction.user.displayAvatarURL())
-            .addFields([
-                {
-                    name: 'Summoner Name', value: `\`${dataArray[1]}\``, inline: true
-              },
-               {
-                   name: 'Producto', value: `\`${dataArray[2]}\` RP`, inline: true
-                },
-                {
-                    name: 'Comprobante', value: `[Click aquí](${dataArray[3]})`, inline: true
-                }
-            ])
-            .setFooter({
-                text: `UserID: ${dataArray[0]}`
-            })
-            .setTimestamp()
-        ],
-        content: '@here'
+      components: [botone],
+      embeds: [
+        new EmbedBuilder()
+          .setAuthor({
+            name: interaction.user.username,
+            iconURL: interaction.user.displayAvatarURL()
+          })
+          .setColor(Color.Debug)
+          .setThumbnail(interaction.user.displayAvatarURL())
+          .addFields([
+            {
+              name: 'Summoner Name', value: `\`${dataArray[1]}\``, inline: true
+            },
+            {
+              name: 'Producto', value: `\`${dataArray[2]}\` RP`, inline: true
+            },
+            {
+              name: 'Comprobante', value: `[Click aquí](${dataArray[3]})`, inline: true
+            }
+          ])
+          .setFooter({
+            text: `UserID: ${dataArray[0]}`
+          })
+          .setTimestamp()
+      ],
+      content: '@here'
     })
   }
 }
