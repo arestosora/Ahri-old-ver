@@ -1,6 +1,6 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from "@sapphire/framework";
 import { EmbedBuilder, ActionRowBuilder, ButtonInteraction, ButtonBuilder, ButtonStyle } from "discord.js";
-import { Color, Emojis } from "../../../utils/index";
+import { Color, Emojis, Log } from "../../../utils/index";
 import { Prisma } from "../../../structures/PrismaClient";
 import { Bot } from "../../..";
 
@@ -36,8 +36,8 @@ export class ButtonHandler extends InteractionHandler {
   public override async parse(interaction: ButtonInteraction) {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-     if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-  //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+    if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+      //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -73,7 +73,7 @@ export class ButtonHandler extends InteractionHandler {
       embeds: [
         new EmbedBuilder()
           .setDescription(
-            `Pedido de \`${user.username}\` aceptado por \`${interaction.user.username}\` y puesto en espera... ${Emojis.Loading}`
+            `Pedido de \`${user.username}\` aceptado por \`${interaction.user.username}\` y en demora... ${Emojis.Loading}`
           )
           .setAuthor({
             name: user.username,
@@ -131,9 +131,7 @@ export class ButtonHandler extends InteractionHandler {
         });
       });
     } catch (error) {
-
+      Log.error(error);
     }
-
-
   }
 }

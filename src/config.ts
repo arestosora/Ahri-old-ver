@@ -11,5 +11,9 @@ export const Config = {
     },
     images: {
         Precios: process.env.PRECIOSIMG
+    },
+        api: {
+            Cloudinary_API_KEY: process.env.Cloudinary_API_KEY,
+            Cloudinary_API_SECRET: process.env.Cloudinary_API_SECRET,
+        }
     }
-}

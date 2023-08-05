@@ -40,7 +40,7 @@ export class ButtonHandler extends InteractionHandler {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
     if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-    // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+    //   if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -75,7 +75,7 @@ export class ButtonHandler extends InteractionHandler {
       const custompedido = dataArray[2].toLowerCase();
       const customPrefixes = ["custom", "orb", "skin"];
       let RP_Pedido_Modificado = customPrefixes.some(prefix => custompedido.startsWith(prefix)) ? 2295 : parseInt(custompedido);
-    
+
       switch (custompedido) {
         case "custom1":
           RP_Pedido_Modificado = 2295;
@@ -92,15 +92,25 @@ export class ButtonHandler extends InteractionHandler {
         case "custom5":
           RP_Pedido_Modificado = 1530;
           break;
-        default: 
+        case "skin1350":
+          RP_Pedido_Modificado = 1350;
+          break;
+        case "skin1820":
+          RP_Pedido_Modificado = 1820;
+          break;
+        case "skin3250":
+          RP_Pedido_Modificado = 3250;
+          break;
+
+        default:
           // En caso de que el custompedido no coincida con ninguno de los casos anteriores, mantiene el valor actual de RP_Pedido_Modificado
           break;
       }
-    
+
       let cuentasAsignadas = [];
       let RPsAsignados = 0;
       let i = 0;
-    
+
       if (customPrefixes.some(prefix => custompedido.startsWith(prefix))) {
         const cuentasCombos = await Prisma.cuentas_Combos.findMany({
           where: {
@@ -110,33 +120,33 @@ export class ButtonHandler extends InteractionHandler {
             RPDisponibles: 'asc'
           }
         });
-    
+
         while (RPsAsignados < RP_Pedido_Modificado && i < cuentasCombos.length) {
           const cuenta = cuentasCombos[i];
           const RPsDisponibles = cuenta.RPDisponibles;
           const RPsAsignar = Math.min(RPsDisponibles, RP_Pedido_Modificado - RPsAsignados);
-    
+
           cuentasAsignadas.push({
             Nickname: cuenta.Nickname,
             Username: cuenta.Username,
             Password: cuenta.Password,
             RPsAsignados: RPsAsignar
           });
-    
+
           RPsAsignados += RPsAsignar;
-    
+
           await Prisma.cuentas_Combos.update({
             where: { Username: cuenta.Username },
             data: { RPDisponibles: RPsDisponibles - RPsAsignar },
           });
-    
+
           if (RPsDisponibles - RPsAsignar === 0) {
             await Prisma.cuentas_Combos.update({
               where: { Username: cuenta.Username },
               data: { Estado: 'No Disponible' },
             });
           }
-    
+
           i++;
         }
       } else {
@@ -144,36 +154,36 @@ export class ButtonHandler extends InteractionHandler {
           const cuenta = cuentas[i];
           const RPsDisponibles = cuenta.RPDisponibles;
           const RPsAsignar = Math.min(RPsDisponibles, RP_Pedido_Modificado - RPsAsignados);
-    
+
           cuentasAsignadas.push({
             Nickname: cuenta.Nickname,
             Username: cuenta.Username,
             Password: cuenta.Password,
             RPsAsignados: RPsAsignar
           });
-    
+
           RPsAsignados += RPsAsignar;
-    
+
           await Prisma.cuentas.update({
             where: { Username: cuenta.Username },
             data: { RPDisponibles: RPsDisponibles - RPsAsignar },
           });
-    
+
           if (RPsDisponibles - RPsAsignar === 0) {
             await Prisma.cuentas.update({
               where: { Username: cuenta.Username },
               data: { Estado: 'No Disponible' },
             });
           }
-    
+
           i++;
         }
       }
-    
+
       console.table(cuentasAsignadas);
       return cuentasAsignadas;
     }
-    
+
     // Uso de la función con el valor RP_Pedido y cuentas que has proporcionado:
     const custompedido = dataArray[2];
     const RP_Pedido = parseInt(custompedido);
@@ -271,7 +281,7 @@ export class ButtonHandler extends InteractionHandler {
       return dm.send({
         embeds: [
           new EmbedBuilder()
-            .setDescription(`Tu pedido ha sido aceptado ${Emojis.Success}. Recibirás una solicitud de amistad en **League of Legends** por las cuentas: \`${nicknamesAsignados}\`. ${Emojis.Info}\n**Nota:** Recibirás una confirmación en este chat una vez se haya entregado tu pedido. ${Emojis.Love}`)
+            .setDescription(`Tu pedido ha sido aceptado ${Emojis.Success}. Por favor envía una solicitud de amistad a las siguientes cuentas en **League of Legends:** \`${nicknamesAsignados}\`. ${Emojis.Info}\n**Nota:** Recibirás una confirmación en este chat una vez se haya entregado tu pedido. ${Emojis.Love}`)
             .setColor(Color.Info)
             .setFooter({
               text: `Referencia: ${dataArray[4]}`

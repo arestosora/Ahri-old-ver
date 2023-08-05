@@ -1,11 +1,21 @@
 import { InteractionHandler, InteractionHandlerTypes, PieceContext } from "@sapphire/framework";
 import { StringSelectMenuInteraction, EmbedBuilder, MessageCollector, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
-import { Color, Emojis, IDGenerator, shortenURL, Log } from "../../utils/index";
+import { Color, Emojis, IDGenerator, shortenURL, Log, uploadImageToCloudinary } from "../../utils/index";
 import { Bot } from "../..";
+import { loadImage, createCanvas } from "canvas";
+import path = require("path");
+import * as fs from 'node:fs';
 
 interface optionsObject {
   disabled: boolean | undefined;
   author: string | undefined;
+}
+interface TextOnImageOptions {
+  text: string;
+  fontSize: number;
+  fontColor: string;
+  x: number;
+  y: number;
 }
 
 export const build = async (
@@ -108,11 +118,6 @@ export const build = async (
             value: "13005:HIM",
           },
           {
-            label: "13770 RP",
-            emoji: "1134181246029807637",
-            value: "13770:HIM",
-          },
-          {
             label: "Combo Skins & Botin Hextech 1",
             emoji: "1135684868701949962",
             value: "custom1:HIM",
@@ -138,11 +143,6 @@ export const build = async (
             value: "custom5:HIM",
           },
           {
-            label: "Orbes",
-            emoji: '1136127437659455569',
-            value: 'orbes:HIM'
-          },
-          {
             label: "Skin 1350 RP",
             emoji: '1136127437659455569',
             value: 'skin1530:HIM'
@@ -151,6 +151,11 @@ export const build = async (
             label: "Skin 1820 RP",
             emoji: '1136127437659455569',
             value: 'skin1820:HIM'
+          },
+          {
+            label: "Skin 3250 RP",
+            emoji: '1136127437659455569',
+            value: 'skin3250:HIM'
           }
         )
     );
@@ -165,11 +170,50 @@ export class ShopMenuHandler extends InteractionHandler {
     });
   }
 
+  private async drawTextOnImage(imageURL: string, options: TextOnImageOptions): Promise<string> {
+    const { text, fontSize, fontColor, x, y } = options;
+
+    // Carga la imagen desde la URL.
+    const image = await loadImage(imageURL);
+
+    // Establece el tamaño del canvas para que coincida con el de la imagen.
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
+
+    // Dibuja la imagen en el canvas.
+    ctx.drawImage(image, 0, 0, image.width, image.height);
+
+    // Establece las propiedades de estilo del texto.
+    ctx.fillStyle = fontColor;
+    ctx.font = `${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+
+    // Dibuja el texto en el canvas.
+    ctx.fillText(text, x, y);
+
+    // Genera un nombre de archivo único para la imagen con el texto dibujado.
+    const filename = `${Date.now()}.png`;
+
+    // Guarda el canvas en un archivo en la carpeta local.
+    const outputPath = path.join(__dirname, '../../output', filename);
+    const out = fs.createWriteStream(outputPath);
+    const stream = canvas.createPNGStream();
+    stream.pipe(out);
+    return new Promise<string>((resolve, reject) => {
+      out.on('finish', () => {
+        resolve(outputPath); // Devuelve la ruta del archivo guardado localmente.
+      });
+      out.on('error', (error) => {
+        reject(error);
+      });
+    });
+  }
+
   public override async parse(interaction: StringSelectMenuInteraction) {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-    if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-      //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+    // if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+    if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -191,7 +235,7 @@ export class ShopMenuHandler extends InteractionHandler {
 
 
   public async run(interaction: StringSelectMenuInteraction) {
-    // try {
+    try {
       const UniqueID = await IDGenerator(5);
       const data = interaction.customId
         .split(/_+/g)
@@ -213,7 +257,8 @@ export class ShopMenuHandler extends InteractionHandler {
       const opcion = args[0][0];
 
       switch (opcion) {
-        case "765":
+        case "765": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -229,9 +274,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
           break;
 
-        case "1530":
+        case "1530": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -247,9 +418,134 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
           break;
 
-        case "2295":
+        case "2295": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -264,10 +560,136 @@ export class ShopMenuHandler extends InteractionHandler {
             ],
             components: [],
           });
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
 
           break;
 
-        case "3060":
+        case "3060": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -283,9 +705,136 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "3825":
+        case "3825": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -301,9 +850,136 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
           break;
 
-        case "4590":
+        case "4590": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -319,9 +995,136 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
           break;
 
-        case "5355":
+        case "5355": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -337,9 +1140,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "6120":
+        case "6120": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -355,9 +1284,136 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "6885":
+        case "6885": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -373,9 +1429,136 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
           break;
 
-        case "7650":
+        case "7650": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -391,9 +1574,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
           break;
 
-        case "8415":
+        case "8415": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -409,9 +1718,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "9180":
+        case "9180": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -427,9 +1862,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "9180":
+        case "9180": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -445,9 +2006,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "9945":
+        case "9945": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -462,10 +2149,135 @@ export class ShopMenuHandler extends InteractionHandler {
             ],
             components: [],
           });
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
 
           break;
 
-        case "10710":
+        case "10710": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -481,9 +2293,134 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
           break;
 
-        case "11475":
+        case "11475": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -499,9 +2436,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "12240":
+        case "12240": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -517,9 +2580,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "13005":
+        case "13005": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -535,9 +2724,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "13770":
+        case "13770": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -553,9 +2868,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "custom1":
+        case "custom1": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -564,16 +3005,143 @@ export class ShopMenuHandler extends InteractionHandler {
                   iconURL: this.container.client.user.displayAvatarURL(),
                 })
                 .setDescription(
-                  "Has seleccionado el `Combo 1`. Ahora por favor escribe tu nombre de invocador."
+                  "Has seleccionado el paquete de `13770` **RP**. Ahora por favor escribe tu nombre de invocador."
                 )
                 .setColor(Color.Success),
             ],
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+        }
+
+
           break;
 
-        case "custom2":
+        case "custom2": {
+
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -589,9 +3157,185 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+
+              const SkinEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, escribe por favor el nombre de la Skin que deseas adquirir.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [SkinEmbed],
+              });
+
+              const SkinCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) => msg.author.id === interaction.user.id,
+                max: 1,
+                time: 120000,
+              });
+
+              let skin = "";
+              SkinCollector.on("collect", (message) => {
+                skin = message.content;
+              });
+
+              SkinCollector.on("end", async (collected, reason) => {
+                if (collected) {
+                  const NameEmbed = new EmbedBuilder()
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .setDescription(
+                      `Perfecto, tu nombre de invocador es \`${name}\` y la skin que deseas adquirir es \`${skin}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                    )
+                    .setColor(Color.Success);
+
+                  await interaction.channel.send({
+                    embeds: [NameEmbed],
+                  });
+                }
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+
+
+                await interaction.channel.send({ content: `${Emojis.Loading}` }).then(async (msg) => {
+                  try {
+                    const textOptions: TextOnImageOptions = {
+                      text: skin, // O el texto que desees poner en la imagen.
+                      fontSize: 100, // El tamaño de la fuente.
+                      fontColor: 'red', // El color del texto (puede ser un valor CSS válido como 'red', '#FF0000', etc.).
+                      x: 500, // Posición x del texto en la imagen.
+                      y: 1500, // Posición y del texto en la imagen.
+                    };
+                    const localImagePath = await this.drawTextOnImage(attachmentURL, textOptions);
+                    const publicImageURL = await uploadImageToCloudinary(localImagePath);
+                    const shortURL = await shortenURL(publicImageURL);
+
+                    const AttachmentEmbed = new EmbedBuilder()
+                      .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                      .setAuthor({
+                        name: `${interaction.user.username}`,
+                        iconURL: interaction.user.displayAvatarURL(),
+                      })
+                      .addFields(
+                        {
+                          name: "Nombre de invocador",
+                          value: `\`${name}\``,
+                          inline: true,
+                        },
+                        {
+                          name: "Producto",
+                          value: `\`${selectedOption}\` RP`,
+                          inline: true,
+                        },
+                        {
+                          name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                        },
+                        {
+                          name: 'Skin A Comprar', value: `${skin}`, inline: true
+                        }
+                      )
+                      .setDescription(
+                        `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                      )
+                      .setColor(Color.Success)
+                      .setImage(publicImageURL); // Aquí usamos la URL pública de la imagen cargada en ImgBB.
+
+                    const botone = new ActionRowBuilder<ButtonBuilder>();
+                    const module1 = await import(
+                      "../../interaction-handlers/buttons/g/c"
+                    );
+                    const module2 = await import(
+                      "../../interaction-handlers/buttons/g/a"
+                    );
+
+                    await module1.build(
+                      botone,
+                      { disabled: false, author: interaction.user.id },
+                      []
+                    );
+                    await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                    );
+
+                    await msg.edit({
+                      content: '',
+                      embeds: [AttachmentEmbed],
+                      components: [botone],
+                    });
+                    // Resto del código relacionado con el flujo de tu switch después de obtener la URL de la imagen con el texto dibujado.
+
+                  } catch (error) {
+                    Log.error('Error al dibujar texto en la imagen:', error);
+                  }
+                });
+
+              });
+
+            }
+          });
+        }
+
           break;
 
-        case "custom3":
+        case "custom3": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -607,9 +3351,186 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+
+              const SkinEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, escribe por favor el nombre de la Skin que deseas adquirir.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [SkinEmbed],
+              });
+
+              const SkinCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) => msg.author.id === interaction.user.id,
+                max: 1,
+                time: 120000,
+              });
+
+              let skin = "";
+              SkinCollector.on("collect", (message) => {
+                skin = message.content;
+              });
+
+              SkinCollector.on("end", async (collected, reason) => {
+                if (collected) {
+                  const NameEmbed = new EmbedBuilder()
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .setDescription(
+                      `Perfecto, tu nombre de invocador es \`${name}\` y la skin que deseas adquirir es \`${skin}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                    )
+                    .setColor(Color.Success);
+
+                  await interaction.channel.send({
+                    embeds: [NameEmbed],
+                  });
+                }
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+
+
+                await interaction.channel.send({ content: `${Emojis.Loading}` }).then(async (msg) => {
+                  try {
+                    const textOptions: TextOnImageOptions = {
+                      text: skin, // O el texto que desees poner en la imagen.
+                      fontSize: 100, // El tamaño de la fuente.
+                      fontColor: 'red', // El color del texto (puede ser un valor CSS válido como 'red', '#FF0000', etc.).
+                      x: 500, // Posición x del texto en la imagen.
+                      y: 1500, // Posición y del texto en la imagen.
+                    };
+                    const localImagePath = await this.drawTextOnImage(attachmentURL, textOptions);
+                    const publicImageURL = await uploadImageToCloudinary(localImagePath);
+                    const shortURL = await shortenURL(publicImageURL);
+
+                    const AttachmentEmbed = new EmbedBuilder()
+                      .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                      .setAuthor({
+                        name: `${interaction.user.username}`,
+                        iconURL: interaction.user.displayAvatarURL(),
+                      })
+                      .addFields(
+                        {
+                          name: "Nombre de invocador",
+                          value: `\`${name}\``,
+                          inline: true,
+                        },
+                        {
+                          name: "Producto",
+                          value: `\`${selectedOption}\` RP`,
+                          inline: true,
+                        },
+                        {
+                          name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                        },
+                        {
+                          name: 'Skin A Comprar', value: `${skin}`, inline: true
+                        }
+                      )
+                      .setDescription(
+                        `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                      )
+                      .setColor(Color.Success)
+                      .setImage(publicImageURL); // Aquí usamos la URL pública de la imagen cargada en ImgBB.
+
+                    const botone = new ActionRowBuilder<ButtonBuilder>();
+                    const module1 = await import(
+                      "../../interaction-handlers/buttons/g/c"
+                    );
+                    const module2 = await import(
+                      "../../interaction-handlers/buttons/g/a"
+                    );
+
+                    await module1.build(
+                      botone,
+                      { disabled: false, author: interaction.user.id },
+                      []
+                    );
+                    await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                    );
+
+                    await msg.edit({
+                      content: '',
+                      embeds: [AttachmentEmbed],
+                      components: [botone],
+                    });
+                    // Resto del código relacionado con el flujo de tu switch después de obtener la URL de la imagen con el texto dibujado.
+
+                  } catch (error) {
+                    Log.error('Error al dibujar texto en la imagen:', error);
+                  }
+                });
+
+              });
+
+            }
+          });
+        }
+  
+
           break;
 
-        case "custom4":
+        case "custom4": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -625,9 +3546,135 @@ export class ShopMenuHandler extends InteractionHandler {
             components: [],
           });
 
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
+          });
+
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+              const NameEmbed = new EmbedBuilder()
+                .setAuthor({
+                  name: `${interaction.user.username}`,
+                  iconURL: interaction.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                )
+                .setColor(Color.Success);
+
+              await interaction.channel.send({
+                embeds: [NameEmbed],
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+                await shortenURL(attachmentURL).then(async (shortURL) => {
+                  const AttachmentEmbed = new EmbedBuilder()
+                    .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .addFields(
+                      {
+                        name: "Nombre de invocador",
+                        value: `\`${name}\``,
+                        inline: true,
+                      },
+                      {
+                        name: "Producto",
+                        value: `\`${selectedOption}\` RP`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                      }
+
+                    )
+                    .setDescription(
+                      `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                    )
+                    .setColor(Color.Success)
+                    .setImage(attachmentURL);
+
+                  const botone = new ActionRowBuilder<ButtonBuilder>();
+                  const module1 = await import(
+                    "../../interaction-handlers/buttons/g/c"
+                  );
+                  const module2 = await import(
+                    "../../interaction-handlers/buttons/g/a"
+                  );
+
+                  await module1.build(
+                    botone,
+                    { disabled: false, author: interaction.user.id },
+                    []
+                  );
+                  await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                  );
+
+                  await interaction.channel.send({
+                    embeds: [AttachmentEmbed],
+                    components: [botone],
+                  });
+                }).catch((error) => {
+                  Log.error('Error al acortar la URL:', error);
+                });
+
+              });
+            }
+          });
+
+        }
+
           break;
 
-        case "custom5":
+        case "custom5": {
           await interaction.update({
             embeds: [
               new EmbedBuilder()
@@ -642,76 +3689,22 @@ export class ShopMenuHandler extends InteractionHandler {
             ],
             components: [],
           });
+        }
 
-          break;
+        const nameCollector = new MessageCollector(interaction.channel, {
+          filter: (msg) => msg.author.id === interaction.user.id,
+          max: 1,
+          time: 120000,
+        });
 
-        case "orbes":
-          await interaction.update({
-            embeds: [
-              new EmbedBuilder()
-                .setAuthor({
-                  name: this.container.client.user.username,
-                  iconURL: this.container.client.user.displayAvatarURL(),
-                })
-                .setDescription(
-                  "Has seleccionado el paquete de `Orbes`. Ahora por favor escribe tu nombre de invocador."
-                )
-                .setColor(Color.Success),
-            ],
-            components: [],
-          });
+        let name = "";
+        nameCollector.on("collect", (message) => {
+          name = message.content;
+        });
 
-          break;
-
-          case "skin1350":
-            await interaction.update({
-              embeds: [
-                new EmbedBuilder()
-                  .setAuthor({
-                    name: this.container.client.user.username,
-                    iconURL: this.container.client.user.displayAvatarURL(),
-                  })
-                  .setDescription(
-                    "Has seleccionado la `Skin de 1350 RP`. Ahora por favor escribe tu nombre de invocador."
-                  )
-                  .setColor(Color.Success),
-              ],
-              components: [],
-            });
-  
-            break;
-
-      }
-
-      const nameCollector = new MessageCollector(interaction.channel, {
-        filter: (msg) => msg.author.id === interaction.user.id,
-        max: 1,
-        time: 120000,
-      });
-
-      let name = "";
-      nameCollector.on("collect", (message) => {
-        name = message.content;
-      });
-
-      nameCollector.on("end", async (collected, reason) => {
-        if (reason === "time") {
-          interaction.channel.send({
-            embeds: [
-              new EmbedBuilder()
-                .setAuthor({
-                  name: `${Bot.user.username}`,
-                  iconURL: Bot.user.displayAvatarURL(),
-                })
-                .setColor(Color.Error)
-                .setDescription(
-                  `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
-                ),
-            ],
-          });
-        } else {
-          if (name.length > 16) {
-            await interaction.channel.send({
+        nameCollector.on("end", async (collected, reason) => {
+          if (reason === "time") {
+            interaction.channel.send({
               embeds: [
                 new EmbedBuilder()
                   .setAuthor({
@@ -720,107 +3713,755 @@ export class ShopMenuHandler extends InteractionHandler {
                   })
                   .setColor(Color.Error)
                   .setDescription(
-                    `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                    `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
                   ),
               ],
             });
-            return;
+          } else {
+            if (name.length > 16) {
+              await interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+              return;
+            }
+            const NameEmbed = new EmbedBuilder()
+              .setAuthor({
+                name: `${interaction.user.username}`,
+                iconURL: interaction.user.displayAvatarURL(),
+              })
+              .setDescription(
+                `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+              )
+              .setColor(Color.Success);
+
+            await interaction.channel.send({
+              embeds: [NameEmbed],
+            });
+
+            const imageCollector = new MessageCollector(interaction.channel, {
+              filter: (msg) =>
+                msg.author.id === interaction.user.id && msg.attachments.size > 0,
+              max: 1
+            });
+
+            imageCollector.on("collect", async (message) => {
+              const attachment = message.attachments.first();
+              const attachmentURL = attachment?.url;
+              const attachmentName = attachment?.name;
+              await shortenURL(attachmentURL).then(async (shortURL) => {
+                const AttachmentEmbed = new EmbedBuilder()
+                  .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                  .setAuthor({
+                    name: `${interaction.user.username}`,
+                    iconURL: interaction.user.displayAvatarURL(),
+                  })
+                  .addFields(
+                    {
+                      name: "Nombre de invocador",
+                      value: `\`${name}\``,
+                      inline: true,
+                    },
+                    {
+                      name: "Producto",
+                      value: `\`${selectedOption}\` RP`,
+                      inline: true,
+                    },
+                    {
+                      name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                    }
+
+                  )
+                  .setDescription(
+                    `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                  )
+                  .setColor(Color.Success)
+                  .setImage(attachmentURL);
+
+                const botone = new ActionRowBuilder<ButtonBuilder>();
+                const module1 = await import(
+                  "../../interaction-handlers/buttons/g/c"
+                );
+                const module2 = await import(
+                  "../../interaction-handlers/buttons/g/a"
+                );
+
+                await module1.build(
+                  botone,
+                  { disabled: false, author: interaction.user.id },
+                  []
+                );
+                await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                );
+
+                await interaction.channel.send({
+                  embeds: [AttachmentEmbed],
+                  components: [botone],
+                });
+              }).catch((error) => {
+                Log.error('Error al acortar la URL:', error);
+              });
+
+            });
           }
-          const NameEmbed = new EmbedBuilder()
-            .setAuthor({
-              name: `${interaction.user.username}`,
-              iconURL: interaction.user.displayAvatarURL(),
-            })
-            .setDescription(
-              `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
-            )
-            .setColor(Color.Success);
+        });
 
-          await interaction.channel.send({
-            embeds: [NameEmbed],
+          break;
+
+        // case "orbes":
+        //   await interaction.update({
+        //     embeds: [
+        //       new EmbedBuilder()
+        //         .setAuthor({
+        //           name: this.container.client.user.username,
+        //           iconURL: this.container.client.user.displayAvatarURL(),
+        //         })
+        //         .setDescription(
+        //           "Has seleccionado el paquete de `Orbes`. Ahora por favor escribe tu nombre de invocador."
+        //         )
+        //         .setColor(Color.Success),
+        //     ],
+        //     components: [],
+        //   });
+
+        //   break;
+
+        case "skin1350": {
+          await interaction.update({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({
+                  name: this.container.client.user.username,
+                  iconURL: this.container.client.user.displayAvatarURL(),
+                })
+                .setDescription(
+                  "Has seleccionado la `Skin de 1350 RP`. Ahora por favor escribe tu nombre de invocador."
+                )
+                .setColor(Color.Success),
+            ],
+            components: [],
           });
 
-          const imageCollector = new MessageCollector(interaction.channel, {
-            filter: (msg) =>
-              msg.author.id === interaction.user.id && msg.attachments.size > 0,
-            max: 1
+          const nameCollector = new MessageCollector(interaction.channel, {
+            filter: (msg) => msg.author.id === interaction.user.id,
+            max: 1,
+            time: 120000,
           });
 
-          imageCollector.on("collect", async (message) => {
-            const attachment = message.attachments.first();
-            const attachmentURL = attachment?.url;
-            const attachmentName = attachment?.name;
-            await shortenURL(attachmentURL).then(async (shortURL) => {
-              const AttachmentEmbed = new EmbedBuilder()
-                .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+          let name = "";
+          nameCollector.on("collect", (message) => {
+            name = message.content;
+          });
+
+          nameCollector.on("end", async (collected, reason) => {
+            if (reason === "time") {
+              interaction.channel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: `${Bot.user.username}`,
+                      iconURL: Bot.user.displayAvatarURL(),
+                    })
+                    .setColor(Color.Error)
+                    .setDescription(
+                      `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                    ),
+                ],
+              });
+            } else {
+              if (name.length > 16) {
+                await interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+                return;
+              }
+
+              const SkinEmbed = new EmbedBuilder()
                 .setAuthor({
                   name: `${interaction.user.username}`,
                   iconURL: interaction.user.displayAvatarURL(),
                 })
-                .addFields(
-                  {
-                    name: "Nombre de invocador",
-                    value: `\`${name}\``,
-                    inline: true,
-                  },
-                  {
-                    name: "Producto",
-                    value: `\`${selectedOption}\` RP`,
-                    inline: true,
-                  },
-                  {
-                    name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
-                  }
-
-                )
                 .setDescription(
-                  `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                  `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, escribe por favor el nombre de la Skin que deseas adquirir.`
                 )
-                .setColor(Color.Success)
-                .setImage(attachmentURL);
-
-              const botone = new ActionRowBuilder<ButtonBuilder>();
-              const module1 = await import(
-                "../../interaction-handlers/buttons/g/c"
-              );
-              const module2 = await import(
-                "../../interaction-handlers/buttons/g/a"
-              );
-
-              await module1.build(
-                botone,
-                { disabled: false, author: interaction.user.id },
-                []
-              );
-              await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
-              );
+                .setColor(Color.Success);
 
               await interaction.channel.send({
-                embeds: [AttachmentEmbed],
-                components: [botone],
+                embeds: [SkinEmbed],
               });
-            }).catch((error) => {
-              Log.error('Error al acortar la URL:', error);
+
+              const SkinCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) => msg.author.id === interaction.user.id,
+                max: 1,
+                time: 120000,
+              });
+
+              let skin = "";
+              SkinCollector.on("collect", (message) => {
+                skin = message.content;
+              });
+
+              SkinCollector.on("end", async (collected, reason) => {
+                if (collected) {
+                  const NameEmbed = new EmbedBuilder()
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .setDescription(
+                      `Perfecto, tu nombre de invocador es \`${name}\` y la skin que deseas adquirir es \`${skin}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                    )
+                    .setColor(Color.Success);
+
+                  await interaction.channel.send({
+                    embeds: [NameEmbed],
+                  });
+                }
+              });
+
+              const imageCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) =>
+                  msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                max: 1
+              });
+
+              imageCollector.on("collect", async (message) => {
+                const attachment = message.attachments.first();
+                const attachmentURL = attachment?.url;
+                const attachmentName = attachment?.name;
+
+
+                await interaction.channel.send({ content: `${Emojis.Loading}` }).then(async (msg) => {
+                  try {
+                    const textOptions: TextOnImageOptions = {
+                      text: skin, // O el texto que desees poner en la imagen.
+                      fontSize: 100, // El tamaño de la fuente.
+                      fontColor: 'red', // El color del texto (puede ser un valor CSS válido como 'red', '#FF0000', etc.).
+                      x: 500, // Posición x del texto en la imagen.
+                      y: 1500, // Posición y del texto en la imagen.
+                    };
+                    const localImagePath = await this.drawTextOnImage(attachmentURL, textOptions);
+                    const publicImageURL = await uploadImageToCloudinary(localImagePath);
+                    const shortURL = await shortenURL(publicImageURL);
+
+                    const AttachmentEmbed = new EmbedBuilder()
+                      .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                      .setAuthor({
+                        name: `${interaction.user.username}`,
+                        iconURL: interaction.user.displayAvatarURL(),
+                      })
+                      .addFields(
+                        {
+                          name: "Nombre de invocador",
+                          value: `\`${name}\``,
+                          inline: true,
+                        },
+                        {
+                          name: "Producto",
+                          value: `\`${selectedOption}\` RP`,
+                          inline: true,
+                        },
+                        {
+                          name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                        },
+                        {
+                          name: 'Skin A Comprar', value: `${skin}`, inline: true
+                        }
+                      )
+                      .setDescription(
+                        `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                      )
+                      .setColor(Color.Success)
+                      .setImage(publicImageURL); // Aquí usamos la URL pública de la imagen cargada en ImgBB.
+
+                    const botone = new ActionRowBuilder<ButtonBuilder>();
+                    const module1 = await import(
+                      "../../interaction-handlers/buttons/g/c"
+                    );
+                    const module2 = await import(
+                      "../../interaction-handlers/buttons/g/a"
+                    );
+
+                    await module1.build(
+                      botone,
+                      { disabled: false, author: interaction.user.id },
+                      []
+                    );
+                    await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                    );
+
+                    await msg.edit({
+                      content: '',
+                      embeds: [AttachmentEmbed],
+                      components: [botone],
+                    });
+                    // Resto del código relacionado con el flujo de tu switch después de obtener la URL de la imagen con el texto dibujado.
+
+                  } catch (error) {
+                    Log.error('Error al dibujar texto en la imagen:', error);
+                  }
+                });
+
+              });
+
+            }
+          });
+
+        }
+          break;
+
+          case "skin1820": {
+            await interaction.update({
+              embeds: [
+                new EmbedBuilder()
+                  .setAuthor({
+                    name: this.container.client.user.username,
+                    iconURL: this.container.client.user.displayAvatarURL(),
+                  })
+                  .setDescription(
+                    "Has seleccionado la `Skin de 1820 RP`. Ahora por favor escribe tu nombre de invocador."
+                  )
+                  .setColor(Color.Success),
+              ],
+              components: [],
             });
 
-          });
-        }
+            const nameCollector = new MessageCollector(interaction.channel, {
+              filter: (msg) => msg.author.id === interaction.user.id,
+              max: 1,
+              time: 120000,
+            });
+  
+            let name = "";
+            nameCollector.on("collect", (message) => {
+              name = message.content;
+            });
+  
+            nameCollector.on("end", async (collected, reason) => {
+              if (reason === "time") {
+                interaction.channel.send({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setAuthor({
+                        name: `${Bot.user.username}`,
+                        iconURL: Bot.user.displayAvatarURL(),
+                      })
+                      .setColor(Color.Error)
+                      .setDescription(
+                        `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                      ),
+                  ],
+                });
+              } else {
+                if (name.length > 16) {
+                  await interaction.channel.send({
+                    embeds: [
+                      new EmbedBuilder()
+                        .setAuthor({
+                          name: `${Bot.user.username}`,
+                          iconURL: Bot.user.displayAvatarURL(),
+                        })
+                        .setColor(Color.Error)
+                        .setDescription(
+                          `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                        ),
+                    ],
+                  });
+                  return;
+                }
+  
+                const SkinEmbed = new EmbedBuilder()
+                  .setAuthor({
+                    name: `${interaction.user.username}`,
+                    iconURL: interaction.user.displayAvatarURL(),
+                  })
+                  .setDescription(
+                    `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, escribe por favor el nombre de la Skin que deseas adquirir.`
+                  )
+                  .setColor(Color.Success);
+  
+                await interaction.channel.send({
+                  embeds: [SkinEmbed],
+                });
+  
+                const SkinCollector = new MessageCollector(interaction.channel, {
+                  filter: (msg) => msg.author.id === interaction.user.id,
+                  max: 1,
+                  time: 120000,
+                });
+  
+                let skin = "";
+                SkinCollector.on("collect", (message) => {
+                  skin = message.content;
+                });
+  
+                SkinCollector.on("end", async (collected, reason) => {
+                  if(reason){
+                    if (reason === "time") {
+                      interaction.channel.send({
+                        embeds: [
+                          new EmbedBuilder()
+                            .setAuthor({
+                              name: `${Bot.user.username}`,
+                              iconURL: Bot.user.displayAvatarURL(),
+                            })
+                            .setColor(Color.Error)
+                            .setDescription(
+                              `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                            ),
+                        ],
+                      });
+                    } 
+                  } else if (collected){
+                    const NameEmbed = new EmbedBuilder()
+                      .setAuthor({
+                        name: `${interaction.user.username}`,
+                        iconURL: interaction.user.displayAvatarURL(),
+                      })
+                      .setDescription(
+                        `Perfecto, tu nombre de invocador es \`${name}\` y la skin que deseas adquirir es \`${skin}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                      )
+                      .setColor(Color.Success);
+  
+                    await interaction.channel.send({
+                      embeds: [NameEmbed],
+                    });
+                  }
+                });
+  
+                const imageCollector = new MessageCollector(interaction.channel, {
+                  filter: (msg) =>
+                    msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                  max: 1
+                });
+  
+                imageCollector.on("collect", async (message) => {
+                  const attachment = message.attachments.first();
+                  const attachmentURL = attachment?.url;
+                  const attachmentName = attachment?.name;
+  
+  
+                  await interaction.channel.send({ content: `${Emojis.Loading}` }).then(async (msg) => {
+                    try {
+                      const textOptions: TextOnImageOptions = {
+                        text: skin, // O el texto que desees poner en la imagen.
+                        fontSize: 100, // El tamaño de la fuente.
+                        fontColor: 'red', // El color del texto (puede ser un valor CSS válido como 'red', '#FF0000', etc.).
+                        x: 500, // Posición x del texto en la imagen.
+                        y: 1500, // Posición y del texto en la imagen.
+                      };
+                      const localImagePath = await this.drawTextOnImage(attachmentURL, textOptions);
+                      const publicImageURL = await uploadImageToCloudinary(localImagePath);
+                      const shortURL = await shortenURL(publicImageURL);
+  
+                      const AttachmentEmbed = new EmbedBuilder()
+                        .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                        .setAuthor({
+                          name: `${interaction.user.username}`,
+                          iconURL: interaction.user.displayAvatarURL(),
+                        })
+                        .addFields(
+                          {
+                            name: "Nombre de invocador",
+                            value: `\`${name}\``,
+                            inline: true,
+                          },
+                          {
+                            name: "Producto",
+                            value: `\`${selectedOption}\` RP`,
+                            inline: true,
+                          },
+                          {
+                            name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                          },
+                          {
+                            name: 'Skin A Comprar', value: `${skin}`, inline: true
+                          }
+                        )
+                        .setDescription(
+                          `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                        )
+                        .setColor(Color.Success)
+                        .setImage(publicImageURL); // Aquí usamos la URL pública de la imagen cargada en ImgBB.
+  
+                      const botone = new ActionRowBuilder<ButtonBuilder>();
+                      const module1 = await import(
+                        "../../interaction-handlers/buttons/g/c"
+                      );
+                      const module2 = await import(
+                        "../../interaction-handlers/buttons/g/a"
+                      );
+  
+                      await module1.build(
+                        botone,
+                        { disabled: false, author: interaction.user.id },
+                        []
+                      );
+                      await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                      );
+  
+                      await msg.edit({
+                        content: '',
+                        embeds: [AttachmentEmbed],
+                        components: [botone],
+                      });
+                      // Resto del código relacionado con el flujo de tu switch después de obtener la URL de la imagen con el texto dibujado.
+  
+                    } catch (error) {
+                      Log.error('Error al dibujar texto en la imagen:', error);
+                    }
+                  });
+  
+                });
+  
+              }
+            });
+
+          }
+            break;
+
+            case "skin3250": {
+              await interaction.update({
+                embeds: [
+                  new EmbedBuilder()
+                    .setAuthor({
+                      name: this.container.client.user.username,
+                      iconURL: this.container.client.user.displayAvatarURL(),
+                    })
+                    .setDescription(
+                      "Has seleccionado la `Skin de 3250 RP`. Ahora por favor escribe tu nombre de invocador."
+                    )
+                    .setColor(Color.Success),
+                ],
+                components: [],
+              });
+  
+              const nameCollector = new MessageCollector(interaction.channel, {
+                filter: (msg) => msg.author.id === interaction.user.id,
+                max: 1,
+                time: 120000,
+              });
+    
+              let name = "";
+              nameCollector.on("collect", (message) => {
+                name = message.content;
+              });
+    
+              nameCollector.on("end", async (collected, reason) => {
+                if (reason === "time") {
+                  interaction.channel.send({
+                    embeds: [
+                      new EmbedBuilder()
+                        .setAuthor({
+                          name: `${Bot.user.username}`,
+                          iconURL: Bot.user.displayAvatarURL(),
+                        })
+                        .setColor(Color.Error)
+                        .setDescription(
+                          `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                        ),
+                    ],
+                  });
+                } else {
+                  if (name.length > 16) {
+                    await interaction.channel.send({
+                      embeds: [
+                        new EmbedBuilder()
+                          .setAuthor({
+                            name: `${Bot.user.username}`,
+                            iconURL: Bot.user.displayAvatarURL(),
+                          })
+                          .setColor(Color.Error)
+                          .setDescription(
+                            `${Emojis.Error} El nombre de invocador no puede tener más de 16 caracteres. Inténtalo de nuevo.`
+                          ),
+                      ],
+                    });
+                    return;
+                  }
+    
+                  const SkinEmbed = new EmbedBuilder()
+                    .setAuthor({
+                      name: `${interaction.user.username}`,
+                      iconURL: interaction.user.displayAvatarURL(),
+                    })
+                    .setDescription(
+                      `Perfecto, tu nombre de invocador es \`${name}\`. Ahora, escribe por favor el nombre de la Skin que deseas adquirir.`
+                    )
+                    .setColor(Color.Success);
+    
+                  await interaction.channel.send({
+                    embeds: [SkinEmbed],
+                  });
+    
+                  const SkinCollector = new MessageCollector(interaction.channel, {
+                    filter: (msg) => msg.author.id === interaction.user.id,
+                    max: 1,
+                    time: 120000,
+                  });
+    
+                  let skin = "";
+                  SkinCollector.on("collect", (message) => {
+                    skin = message.content;
+                  });
+    
+                  SkinCollector.on("end", async (collected, reason) => {
+                      if (reason === "time") {
+                        interaction.channel.send({
+                          embeds: [
+                            new EmbedBuilder()
+                              .setAuthor({
+                                name: `${Bot.user.username}`,
+                                iconURL: Bot.user.displayAvatarURL(),
+                              })
+                              .setColor(Color.Error)
+                              .setDescription(
+                                `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
+                              ),
+                          ],
+                        });
+                      } 
+                     else{
+                      const NameEmbed = new EmbedBuilder()
+                        .setAuthor({
+                          name: `${interaction.user.username}`,
+                          iconURL: interaction.user.displayAvatarURL(),
+                        })
+                        .setDescription(
+                          `Perfecto, tu nombre de invocador es \`${name}\` y la skin que deseas adquirir es \`${skin}\`. Ahora, envía el comprobante de pago como una imagen. ${Emojis.Success}\nRecuerda que puedes pagar por **Nequi** <:nequi:1134763235522924596>, **Bancolombia** <:bancolombia:1134763479925010518> o por **PayPal** <:paypal:1134763669855678546>.\nPuedes revisar los precios en: <#1133964283764555787>.`
+                        )
+                        .setColor(Color.Success);
+    
+                      await interaction.channel.send({
+                        embeds: [NameEmbed],
+                      });
+                    }
+                  });
+    
+                  const imageCollector = new MessageCollector(interaction.channel, {
+                    filter: (msg) =>
+                      msg.author.id === interaction.user.id && msg.attachments.size > 0,
+                    max: 1
+                  });
+    
+                  imageCollector.on("collect", async (message) => {
+                    const attachment = message.attachments.first();
+                    const attachmentURL = attachment?.url;
+                    const attachmentName = attachment?.name;
+    
+    
+                    await interaction.channel.send({ content: `${Emojis.Loading}` }).then(async (msg) => {
+                      try {
+                        const textOptions: TextOnImageOptions = {
+                          text: skin, // O el texto que desees poner en la imagen.
+                          fontSize: 100, // El tamaño de la fuente.
+                          fontColor: 'red', // El color del texto (puede ser un valor CSS válido como 'red', '#FF0000', etc.).
+                          x: 500, // Posición x del texto en la imagen.
+                          y: 1500, // Posición y del texto en la imagen.
+                        };
+                        const localImagePath = await this.drawTextOnImage(attachmentURL, textOptions);
+                        const publicImageURL = await uploadImageToCloudinary(localImagePath);
+                        const shortURL = await shortenURL(publicImageURL);
+    
+                        const AttachmentEmbed = new EmbedBuilder()
+                          .setTitle("¡Resumen de tu pedido! " + Emojis.Warning)
+                          .setAuthor({
+                            name: `${interaction.user.username}`,
+                            iconURL: interaction.user.displayAvatarURL(),
+                          })
+                          .addFields(
+                            {
+                              name: "Nombre de invocador",
+                              value: `\`${name}\``,
+                              inline: true,
+                            },
+                            {
+                              name: "Producto",
+                              value: `\`${selectedOption}\` RP`,
+                              inline: true,
+                            },
+                            {
+                              name: 'Comprobante', value: `[Click aquí](${shortURL})`, inline: true
+                            },
+                            {
+                              name: 'Skin A Comprar', value: `${skin}`, inline: true
+                            }
+                          )
+                          .setDescription(
+                            `Por favor corrobora que esta información es correcta, ya que es la que se enviará para que procesen tu pedido.`
+                          )
+                          .setColor(Color.Success)
+                          .setImage(publicImageURL); // Aquí usamos la URL pública de la imagen cargada en ImgBB.
+    
+                        const botone = new ActionRowBuilder<ButtonBuilder>();
+                        const module1 = await import(
+                          "../../interaction-handlers/buttons/g/c"
+                        );
+                        const module2 = await import(
+                          "../../interaction-handlers/buttons/g/a"
+                        );
+    
+                        await module1.build(
+                          botone,
+                          { disabled: false, author: interaction.user.id },
+                          []
+                        );
+                        await module2.build(botone, { disabled: false, author: interaction.user.id }, [`${interaction.user.id}`, `${name}`, `${selectedOption}`, `${shortURL}`, `${UniqueID}`]
+                        );
+    
+                        await msg.edit({
+                          content: '',
+                          embeds: [AttachmentEmbed],
+                          components: [botone],
+                        });    
+                      } catch (error) {
+                        Log.error('Error al dibujar texto en la imagen:', error);
+                      }
+                    });
+    
+                  });
+    
+                }
+              });
+  
+            }
+              break;
+      }
+
+    } catch (error) {
+      Log.error(error);
+      return interaction.channel.send({
+        embeds: [
+          new EmbedBuilder()
+            .setAuthor({
+              name: `${Bot.user.username}`,
+              iconURL: Bot.user.displayAvatarURL(),
+            })
+            .setColor(Color.Error)
+            .setDescription(
+              `${Emojis.Error} Ha ocurrido un error al realizar tu pedido, inténtalo de nuevo. En caso de que el error persista, contacta con los administradores.`
+            ),
+        ],
       });
-    // } catch (error) {
-    //   Log.error(error);
-    //   return interaction.channel.send({
-    //     embeds: [
-    //       new EmbedBuilder()
-    //         .setAuthor({
-    //           name: `${Bot.user.username}`,
-    //           iconURL: Bot.user.displayAvatarURL(),
-    //         })
-    //         .setColor(Color.Error)
-    //         .setDescription(
-    //           `${Emojis.Error} Ha ocurrido un error al realizar tu pedido, inténtalo de nuevo. En caso de que el error persista, contacta con los administradores.`
-    //         ),
-    //     ],
-    //   });
-    // }
+    }
   }
 }        
