@@ -41,10 +41,6 @@ export class ButtonHandler extends InteractionHandler {
       if (permited) {
         return this.some();
       } else {
-        let embed = new EmbedBuilder()
-          .setDescription('test')
-          .setColor("#ed4245")
-        await interaction.reply({ embeds: [embed] })
         return this.none();
       }
     } else {

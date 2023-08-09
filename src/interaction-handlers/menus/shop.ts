@@ -145,7 +145,7 @@ export const build = async (
           {
             label: "Skin 1350 RP",
             emoji: '1136127437659455569',
-            value: 'skin1530:HIM'
+            value: 'skin1350:HIM'
           },
           {
             label: "Skin 1820 RP",
@@ -210,10 +210,11 @@ export class ShopMenuHandler extends InteractionHandler {
   }
 
   public override async parse(interaction: StringSelectMenuInteraction) {
+
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-    // if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-    if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+     if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+   // if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -222,10 +223,6 @@ export class ShopMenuHandler extends InteractionHandler {
       if (permited) {
         return this.some();
       } else {
-        let embed = new EmbedBuilder()
-          .setDescription('test')
-          .setColor("#ed4245")
-        await interaction.reply({ embeds: [embed] })
         return this.none();
       }
     } else {
@@ -3005,7 +3002,7 @@ export class ShopMenuHandler extends InteractionHandler {
                   iconURL: this.container.client.user.displayAvatarURL(),
                 })
                 .setDescription(
-                  "Has seleccionado el paquete de `13770` **RP**. Ahora por favor escribe tu nombre de invocador."
+                  "Has seleccionado el `Combo 1` **RP**. Ahora por favor escribe tu nombre de invocador."
                 )
                 .setColor(Color.Success),
             ],
@@ -4115,23 +4112,7 @@ export class ShopMenuHandler extends InteractionHandler {
                 });
   
                 SkinCollector.on("end", async (collected, reason) => {
-                  if(reason){
-                    if (reason === "time") {
-                      interaction.channel.send({
-                        embeds: [
-                          new EmbedBuilder()
-                            .setAuthor({
-                              name: `${Bot.user.username}`,
-                              iconURL: Bot.user.displayAvatarURL(),
-                            })
-                            .setColor(Color.Error)
-                            .setDescription(
-                              `Se ha acabado el tiempo para responder. Inténtalo de nuevo.`
-                            ),
-                        ],
-                      });
-                    } 
-                  } else if (collected){
+                  if (collected) {
                     const NameEmbed = new EmbedBuilder()
                       .setAuthor({
                         name: `${interaction.user.username}`,

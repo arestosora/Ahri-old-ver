@@ -3,17 +3,10 @@ import { EmbedBuilder, Emoji, TextChannel, User } from 'discord.js';
 import { ActionRowBuilder, ButtonInteraction, ButtonBuilder, ButtonStyle } from "discord.js";
 import { Color, Emojis, Log } from "../../../utils/index";
 import { Prisma } from "../../../structures/PrismaClient";
-import { Bot } from "../../..";
 
 interface optionsObject {
   disabled: boolean | undefined,
   author: string | undefined
-}
-interface Cuenta {
-  id: number;
-  nickname: string;
-  username: string;
-  password: string;
 }
 
 export const build = async (actionRowBuilder: ActionRowBuilder, options: optionsObject, data: String[] | undefined) => {
@@ -39,8 +32,8 @@ export class ButtonHandler extends InteractionHandler {
   public override async parse(interaction: ButtonInteraction) {
     const cat: string = interaction.customId.split(/:+/g)[0];
     const id: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[0];
-    if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
-    //   if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
+   if (cat == __dirname.split(/\/+/g)[__dirname.split(/\/+/g).length - 1] && id == __filename.split(/\/+/g)[__filename.split(/\/+/g).length - 1].split(/\.+/g)[0]) {
+       //  if (cat == __dirname.split(/\\+/g)[__dirname.split(/\\+/g).length - 1] && id == __filename.split(/\\+/g)[__filename.split(/\\+/g).length - 1].split(/\.+/g)[0]) {
       const restriction: string = interaction.customId.split(/:+/g)[1].split(/_+/g)[1];
       let permited: boolean = restriction.startsWith("a")
       if (!permited && restriction.startsWith("u")) {
@@ -49,10 +42,6 @@ export class ButtonHandler extends InteractionHandler {
       if (permited) {
         return this.some();
       } else {
-        let embed = new EmbedBuilder()
-          .setDescription('test')
-          .setColor("#ed4245")
-        await interaction.reply({ embeds: [embed] })
         return this.none();
       }
     } else {
@@ -74,117 +63,128 @@ export class ButtonHandler extends InteractionHandler {
     async function asignarRPs(RP_Pedido, cuentas) {
       const custompedido = dataArray[2].toLowerCase();
       const customPrefixes = ["custom", "orb", "skin"];
-      let RP_Pedido_Modificado = customPrefixes.some(prefix => custompedido.startsWith(prefix)) ? 2295 : parseInt(custompedido);
-
-      switch (custompedido) {
-        case "custom1":
-          RP_Pedido_Modificado = 2295;
-          break;
-        case "custom2":
-          RP_Pedido_Modificado = 1540;
-          break;
-        case "custom3":
-          RP_Pedido_Modificado = 3000;
-          break;
-        case "custom4":
-          RP_Pedido_Modificado = 2500;
-          break;
-        case "custom5":
-          RP_Pedido_Modificado = 1530;
-          break;
-        case "skin1350":
-          RP_Pedido_Modificado = 1350;
-          break;
-        case "skin1820":
-          RP_Pedido_Modificado = 1820;
-          break;
-        case "skin3250":
-          RP_Pedido_Modificado = 3250;
-          break;
-
-        default:
-          // En caso de que el custompedido no coincida con ninguno de los casos anteriores, mantiene el valor actual de RP_Pedido_Modificado
-          break;
-      }
-
-      let cuentasAsignadas = [];
-      let RPsAsignados = 0;
-      let i = 0;
-
+      let RP_Pedido_Modificado = custompedido.startsWith("custom") ? 2295 : parseInt(custompedido);
+    
       if (customPrefixes.some(prefix => custompedido.startsWith(prefix))) {
-        const cuentasCombos = await Prisma.cuentas_Combos.findMany({
-          where: {
-            Estado: 'Disponible'
-          },
-          orderBy: {
-            RPDisponibles: 'asc'
-          }
-        });
-
-        while (RPsAsignados < RP_Pedido_Modificado && i < cuentasCombos.length) {
-          const cuenta = cuentasCombos[i];
-          const RPsDisponibles = cuenta.RPDisponibles;
-          const RPsAsignar = Math.min(RPsDisponibles, RP_Pedido_Modificado - RPsAsignados);
-
-          cuentasAsignadas.push({
-            Nickname: cuenta.Nickname,
-            Username: cuenta.Username,
-            Password: cuenta.Password,
-            RPsAsignados: RPsAsignar
+        if (custompedido === "skin3250" || custompedido === "skin1350" || custompedido === "skin1820") {
+          const cuentasBanco = await Prisma.cuentas_Banco.findMany({
+            orderBy: {
+              RPDisponibles: 'asc'
+            }
           });
-
-          RPsAsignados += RPsAsignar;
-
-          await Prisma.cuentas_Combos.update({
-            where: { Username: cuenta.Username },
-            data: { RPDisponibles: RPsDisponibles - RPsAsignar },
-          });
-
-          if (RPsDisponibles - RPsAsignar === 0) {
-            await Prisma.cuentas_Combos.update({
-              where: { Username: cuenta.Username },
-              data: { Estado: 'No Disponible' },
-            });
+    
+          const cuenta = cuentasBanco[0];
+          if (cuenta) {
+            let RPsAsignar = 0;
+    
+            if (custompedido === "skin3250") {
+              RPsAsignar = 3250;
+            } else if (custompedido === "skin1350") {
+              RPsAsignar = 1350;
+            } else if (custompedido === "skin1820") {
+              RPsAsignar = 1820;
+            }
+    
+            if (cuenta.RPDisponibles >= RPsAsignar) {
+              const cuentasAsignadas = [{
+                Nickname: cuenta.Nickname,
+                Username: cuenta.Username,
+                Password: cuenta.Password,
+                RPsAsignados: RPsAsignar
+              }];
+    
+              await Prisma.cuentas_Banco.update({
+                where: { Username: cuenta.Username },
+                data: {
+                  RPDisponibles: cuenta.RPDisponibles - RPsAsignar,
+                  Estado: cuenta.RPDisponibles - RPsAsignar <= RPsAsignar ? 'No Disponible' : cuenta.Estado,
+                },
+              });
+    
+              return cuentasAsignadas;
+            } else {
+              return [];
+            }
           }
-
-          i++;
+        } else {
+          const cuentasCombos = await Prisma.cuentas_Combos.findMany({
+            where: {
+              Estado: 'Disponible'
+            },
+            orderBy: {
+              RPDisponibles: 'asc'
+            }
+          });
+    
+          const cuenta = cuentasCombos[0];
+          if (cuenta) {
+            const RPsAsignar = 2295;
+    
+            if (cuenta.RPDisponibles >= RPsAsignar) {
+              const cuentasAsignadas = [{
+                Nickname: cuenta.Nickname,
+                Username: cuenta.Username,
+                Password: cuenta.Password,
+                RPsAsignados: RPsAsignar
+              }];
+    
+              await Prisma.cuentas_Combos.update({
+                where: { Username: cuenta.Username },
+                data: { RPDisponibles: 0, Estado: 'No Disponible' },
+              });
+    
+              return cuentasAsignadas;
+            } else {
+              return [];
+            }
+          }
         }
       } else {
+        let cuentasAsignadas = [];
+        let RPsAsignados = 0;
+        let i = 0;
+    
         while (RPsAsignados < RP_Pedido_Modificado && i < cuentas.length) {
           const cuenta = cuentas[i];
           const RPsDisponibles = cuenta.RPDisponibles;
           const RPsAsignar = Math.min(RPsDisponibles, RP_Pedido_Modificado - RPsAsignados);
-
-          cuentasAsignadas.push({
-            Nickname: cuenta.Nickname,
-            Username: cuenta.Username,
-            Password: cuenta.Password,
-            RPsAsignados: RPsAsignar
-          });
-
-          RPsAsignados += RPsAsignar;
-
-          await Prisma.cuentas.update({
-            where: { Username: cuenta.Username },
-            data: { RPDisponibles: RPsDisponibles - RPsAsignar },
-          });
-
-          if (RPsDisponibles - RPsAsignar === 0) {
+    
+          if (RPsDisponibles >= RPsAsignar) {
+            cuentasAsignadas.push({
+              Nickname: cuenta.Nickname,
+              Username: cuenta.Username,
+              Password: cuenta.Password,
+              RPsAsignados: RPsAsignar
+            });
+    
             await Prisma.cuentas.update({
               where: { Username: cuenta.Username },
-              data: { Estado: 'No Disponible' },
+              data: { RPDisponibles: RPsDisponibles - RPsAsignar },
             });
+    
+            if (RPsDisponibles - RPsAsignar === 0) {
+              await Prisma.cuentas.update({
+                where: { Username: cuenta.Username },
+                data: { Estado: 'No Disponible' },
+              });
+            }
+    
+            RPsAsignados += RPsAsignar;
           }
-
+    
           i++;
         }
+    
+        if (cuentasAsignadas.length > 0) {
+          console.table(cuentasAsignadas);
+        }
+    
+        return cuentasAsignadas;
       }
-
-      console.table(cuentasAsignadas);
-      return cuentasAsignadas;
     }
+    
+    
 
-    // Uso de la función con el valor RP_Pedido y cuentas que has proporcionado:
     const custompedido = dataArray[2];
     const RP_Pedido = parseInt(custompedido);
 

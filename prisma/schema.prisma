@@ -53,3 +53,14 @@ model Cuentas_Combos {
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
 }
+
+model Cuentas_Banco {
+  Nickname String
+  Username String @id
+  Password String
+  RPTotal Int @default(2295)
+  RPDisponibles Int @default(2295)
+  Estado String @default("Disponible")
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
