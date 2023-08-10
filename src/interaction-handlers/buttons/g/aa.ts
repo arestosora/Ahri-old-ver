@@ -110,9 +110,6 @@ export class ButtonHandler extends InteractionHandler {
           const cuentasCombos = await Prisma.cuentas_Combos.findMany({
             where: {
               Estado: 'Disponible'
-            },
-            orderBy: {
-              RPDisponibles: 'asc'
             }
           });
     
