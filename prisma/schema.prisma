@@ -15,14 +15,14 @@ model Users {
 }
 
 model Pedidos {
-  GuildID String @default("1133932007236309072") 
-  SN String
   Referencia String @id
+  Cuentas_Asignadas String?
+  SN String
   UserID String
   Pedido String
   Estado String @default("Pendiente")
   Comprobante String
-  Cuentas_Asignadas String?
+  GuildID String @default("1133932007236309072") 
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
 }
@@ -36,8 +36,8 @@ model Cuentas {
   Nickname String
   Username String @id
   Password String
-  RPTotal Int @default(2295)
   RPDisponibles Int @default(2295)
+  Nota String?
   Estado String @default("Disponible")
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
@@ -47,8 +47,8 @@ model Cuentas_Combos {
   Nickname String
   Username String @id
   Password String
-  RPTotal Int @default(2295)
   RPDisponibles Int @default(2295)
+  Nota String?
   Estado String @default("Disponible")
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
@@ -58,8 +58,8 @@ model Cuentas_Banco {
   Nickname String
   Username String @id
   Password String
-  RPTotal Int @default(2295)
   RPDisponibles Int @default(2295)
+  Nota String?
   Estado String @default("Disponible")
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt

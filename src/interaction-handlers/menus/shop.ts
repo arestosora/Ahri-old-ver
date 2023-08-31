@@ -118,31 +118,6 @@ export const build = async (
             value: "13005:HIM",
           },
           {
-            label: "Combo Skins & Botin Hextech 1",
-            emoji: "1135684868701949962",
-            value: "custom1:HIM",
-          },
-          {
-            label: "Combo Skins & Botin Hextech 2",
-            emoji: "1135684868701949962",
-            value: "custom2:HIM",
-          },
-          {
-            label: "Combo Skins & Botin Hextech 3",
-            emoji: "1135684868701949962",
-            value: "custom3:HIM",
-          },
-          {
-            label: "Combo Skins & Botin Hextech 4",
-            emoji: "1135684868701949962",
-            value: "custom4:HIM",
-          },
-          {
-            label: "Combo Skins & Botin Hextech 5",
-            emoji: "1135684868701949962",
-            value: "custom5:HIM",
-          },
-          {
             label: "Skin 1350 RP",
             emoji: '1136127437659455569',
             value: 'skin1350:HIM'
